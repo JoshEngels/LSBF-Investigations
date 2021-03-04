@@ -3,7 +3,7 @@
 # Build and source directories, target executable name
 TARGET_EXEC ?= runme
 BUILD_DIR ?= ./build
-SRC_DIRS ?= ./src
+SRC_DIRS ?= sources headers
 
 # Find cpp source files
 SRCS := $(shell find $(SRC_DIRS) -name '*.cpp')
@@ -17,7 +17,7 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 # C++ Flags
 CPP_DEBUG_FLAS := -g -fno-omit-frame-pointer 
 CPP_OPT_FLAGS := -O2
-CPP_WARN_FLAGS := -Wall
+CPP_WARN_FLAGS := -Wall -Werror
 CPPFLAGS ?= -std=c++11 $(INC_FLAGS) $(CPP_WARN_FLAGS) $(CPP_OPT_FLAGS) $(CPP_DEBUG_FLAS) -MMD -MP
 
 # Make target executable, require object files to be created

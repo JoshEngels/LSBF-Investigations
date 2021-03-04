@@ -16,8 +16,6 @@ public:
   BloomFilter(std::vector<HashFunction<T>> hashes, size_t hashRange);
 
 	// Add a point to the bloom filter
-	// I know a char* pointer is kind of ugly but it let's you use any type you want
-	// Ok for now
 	void addPoint(std::vector<T> point);
 
 	// Get number of collisions for a test point
@@ -27,7 +25,19 @@ private:
   std::vector<HashFunction<T>> hashes;
   size_t hashRange;
   size_t numHashes;
-  std::shared_ptr<void> bitArray;
+  std::shared_ptr<char> bitArray;
+
+  // Set a bit in the bloom filter
+  void setBit(size_t hashIndex, size_t hashVal) {
+    size_t index = hashVal % hashRange;
+    bitArray.get()[hashIndex * hashRange + (index / 8)] |= (1 << (index % 8));
+  }
+
+  // Get a bit in the bloom filter
+  bool getBit(size_t hashIndex, size_t hashVal) {
+    size_t index = hashVal % hashRange;
+    return bitArray.get()[hashIndex * hashRange + (index / 8)] & (1 << (index % 8));
+  }
 
 };
 
