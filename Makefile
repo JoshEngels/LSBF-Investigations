@@ -22,7 +22,7 @@ CPPFLAGS ?= -std=c++11 $(INC_FLAGS) $(CPP_WARN_FLAGS) $(CPP_OPT_FLAGS) $(CPP_DEB
 
 # Make target executable, require object files to be created
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
-	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+	$(CXX) $(OBJS) -o $@ $(LDFLAGS)
 
 # Make c++ source into object files
 $(BUILD_DIR)/%.cpp.o: %.cpp

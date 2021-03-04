@@ -6,11 +6,16 @@
 #include <string>
 #include <cstdint>
 
-class MurmurHashFunction: HashFunction<std::string> {
+class MurmurHashFunction: public HashFunction<std::string> {
 public:
   MurmurHashFunction(int key) {
     this->key = key;
   }
+
+	MurmurHashFunction (const MurmurHashFunction &old_obj) {
+		this->key = old_obj.key;
+	}
+
 
   uint64_t getVal(std::string item) {
     uint64_t hashes[2];
