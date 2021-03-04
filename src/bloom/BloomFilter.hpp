@@ -32,14 +32,14 @@ private:
 
   // Set a bit in the bloom filter
   void setBit(size_t hashIndex, size_t hashVal) {
-    size_t index = hashVal % hashRange;
-    bitArray.get()[hashIndex * hashRange + (index / 8)] |= (1 << (index % 8));
+    size_t index = hashIndex * hashRange + hashVal % hashRange;
+    bitArray.get()[index / 8] |= (1 << (index % 8));
   }
 
   // Get a bit in the bloom filter
   bool getBit(size_t hashIndex, size_t hashVal) {
-    size_t index = hashVal % hashRange;
-    return bitArray.get()[hashIndex * hashRange + (index / 8)] & (1 << (index % 8));
+    size_t index = hashIndex * hashRange + hashVal % hashRange;
+    return bitArray.get()[index / 8] & (1 << (index % 8));
   }
 
 };
