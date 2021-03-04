@@ -2,16 +2,23 @@
 
 # Build and source directories, target executable name
 TARGET_EXEC ?= runme
+TARGET_TEST ?= testme
 BUILD_DIR ?= ./build
 SRC_DIRS ?= src
+TEST_DIRS ?= test
+MAIN_FILE ?= src/Main.cpp # Do this to avoid including main file when doing tests
 
 # Find cpp source files
 SRCS := $(shell find $(SRC_DIRS) -name '*.cpp')
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 
+TESTSRCS := $(shell find $(SRC_DIRS) -name '*.cpp' -not -path $(MAIN_FILE)) $(shell find $(TEST_DIRS) -name '*.cpp')
+TESTOBJS := $(TESTSRCS:%=$(BUILD_DIR)/%.o)
+TESTDEPS := $(TESTOBJS:.o=.d)
+
 # Automatically generated include flags
-INC_DIRS := $(shell find $(SRC_DIRS) -type d)
+INC_DIRS := $(shell find $(SRC_DIRS) -type d) $(shell find $(TEST_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 # C++ Flags
@@ -19,6 +26,12 @@ CPP_DEBUG_FLAS := -g -fno-omit-frame-pointer
 CPP_OPT_FLAGS := -O2
 CPP_WARN_FLAGS := -Wall -Werror
 CPPFLAGS ?= -std=c++11 $(INC_FLAGS) $(CPP_WARN_FLAGS) $(CPP_OPT_FLAGS) $(CPP_DEBUG_FLAS) -MMD -MP
+
+all: $(BUILD_DIR)/$(TARGET_TEST) $(BUILD_DIR)/$(TARGET_EXEC)
+
+# Make target test, require object files to be created
+$(BUILD_DIR)/$(TARGET_TEST): $(TESTOBJS)
+	$(CXX) $(TESTOBJS) -o $@ $(LDFLAGS)
 
 # Make target executable, require object files to be created
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
@@ -35,6 +48,7 @@ clean:
 	$(RM) -r $(BUILD_DIR)
 
 -include $(DEPS)
+-include $(TESTDEPS)
 
 MKDIR_P ?= mkdir -p
 
