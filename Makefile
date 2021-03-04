@@ -3,7 +3,7 @@
 # Build and source directories, target executable name
 TARGET_EXEC ?= runme
 BUILD_DIR ?= ./build
-SRC_DIRS ?= sources headers
+SRC_DIRS ?= src
 
 # Find cpp source files
 SRCS := $(shell find $(SRC_DIRS) -name '*.cpp')
