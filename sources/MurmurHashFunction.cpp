@@ -12,11 +12,6 @@ public:
     this->key = key;
   }
 
-	MurmurHashFunction (const MurmurHashFunction &old_obj) {
-		this->key = old_obj.key;
-	}
-
-
   uint64_t getVal(std::string item) {
     uint64_t hashes[2];
     MurmurHash3_x64_128(item.c_str(), item.size(), key, &hashes[0]);

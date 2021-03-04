@@ -6,11 +6,15 @@
 
 template <class T>
 class HashFunction {
-
+public:
   virtual uint64_t getVal(T item){
-		std::cerr << "This should next get called"; 
+		std::cerr << "This (generic HashFunction getVal) should not get called!\n"; 
 		exit(1);
 	};
+
+	virtual ~HashFunction() {
+		// No op
+	}
 
 };
 
