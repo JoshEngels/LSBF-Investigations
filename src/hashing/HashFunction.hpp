@@ -17,10 +17,11 @@ public:
     // No op
   }
 
-	virtual size_t getNumHashes() {
-		std::cerr << "This (generic HashFunction getNumHashes) should not get called!\n";
-		exit(1);
-	}
+  virtual size_t getNumHashes() {
+    std::cerr
+        << "This (generic HashFunction getNumHashes) should not get called!\n";
+    exit(1);
+  }
 
 protected:
   // This function bijectively maps the two input 64 bit integers to a 128 bit

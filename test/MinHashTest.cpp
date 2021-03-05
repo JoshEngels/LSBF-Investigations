@@ -10,8 +10,8 @@ SCENARIO("Min hash works as expected") {
   srand(42);
 
   GIVEN("A 3-mer min hash function with multiplicity 2") {
-    HashFunction<string> * testHashFunction = new KMerStringMinHashFunction(3, 7, 1, 2);
-
+    HashFunction<string> *testHashFunction =
+        new KMerStringMinHashFunction(3, 7, 1, 2);
 
     WHEN("We hash the same string twice") {
       string testString = "BlargedyBlarg";
@@ -23,8 +23,9 @@ SCENARIO("Min hash works as expected") {
 
     WHEN("When we hash two similar (Jaccard similarity = 0.8) string 500 times "
          "with multiplicity 2") {
-			size_t numHashes = 500;
-      HashFunction<string> * hashFunctions = new KMerStringMinHashFunction(3, 7, numHashes, 2);
+      size_t numHashes = 500;
+      HashFunction<string> *hashFunctions =
+          new KMerStringMinHashFunction(3, 7, numHashes, 2);
 
       // Both strings of length 29 (so 27 k-mers each)
       // Total of 24 shared 3-mers
@@ -33,7 +34,7 @@ SCENARIO("Min hash works as expected") {
       string string2 = "987abcdefghijklmnopqrstuvwxyz";
 
       vector<uint64_t> hashes1 = hashFunctions->getVal(string1);
-	    vector<uint64_t> hashes2 = hashFunctions->getVal(string2);
+      vector<uint64_t> hashes2 = hashFunctions->getVal(string2);
       THEN("More than 75%*75% and less than 85%*85% of the hashes equal each "
            "other") {
         double bottomBound = 0.75 * 0.75;
