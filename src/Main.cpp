@@ -40,9 +40,10 @@ int main(int argc, char **argv) {
 
   if (argc < 4) {
     cout << "This program runs tests of a LSBF. One need to call this program"
-            "with 'runme <file_name> <data_type> <data_dim> <hash_type>'"
+            "with 'runme <data_file_name> <query_file_name> <data_type> <data_dim>'"
          << endl;
-    cout << "\t<file_name>: Name of file containing the data." << endl;
+    cout << "\t<data_file_name>: Name of file containing the data." << endl;
+    cout << "\t<queries_file_name>: Name of file containing the queries." << endl;
     cout << "\t<data_type>: 1 is strings, 2 is doubles." << endl;
     cout << "\t<data_dim>: 1 is 1 entry per line, 2 is a vector per line "
             "(space seperated)."
@@ -53,32 +54,38 @@ int main(int argc, char **argv) {
   // Set random seed
   srand(42);
 
-  char *fileName = argv[1];
-  int dataType = stoi(argv[2]);
-  int dataDim = stoi(argv[3]);
+  char *dataFileName = argv[1];
+  char *queryFileName = argv[2];
+  int dataType = stoi(argv[3]);
+  int dataDim = stoi(argv[4]);
 
   if (dataType == 1 && dataDim == 1) {
-    // Read in data
-    vector<string> data = parseStringData(fileName);
-    printf("Data (%zu strings) read in...\n", data.size());
-    cout << "Starting test of LSH Bloom filter of string data (using trimers "
-            "and minhash)"
-         << endl;
-    size_t hashRange = 1 << 15;
-    size_t numHashes = 500;
-    size_t concatenationNum = 5;
-    vector<HashFunction<string> *> hashFunctions;
-    for (size_t i = 0; i < numHashes; i++) {
-      hashFunctions.push_back(
-          new KMerStringMinHashFunction(3, i, concatenationNum));
-    }
+    // cout << "Starting test of LSH Bloom filter of string data (using trimers "
+    //         "and minhash)"
+    //      << endl;
+    vector<string> data = parseStringData(dataFileName);
+
+    size_t hashRange = 1 << 25;
+    size_t numHashes = 20;
+    size_t concatenationNum = 3;
+		size_t kmer = 3;
+    HashFunction<string> * hashFunctions = new KMerStringMinHashFunction(kmer, 7, numHashes, concatenationNum);
     BloomFilter<string> minhashFilter =
         BloomFilter<string>(hashFunctions, hashRange);
+		size_t i = 0;
     for (string item : data) {
+			i++;
+			if (i % 10000 == 0) {
+				cout << i * 100 / data.size() << endl;
+			}
       minhashFilter.addPoint(item);
     }
-    printf("Bloom filter built (size %zu MB), testing positive elements...\n",
-           hashRange * numHashes / 8000000);
+		cout << "Done adding items" << endl;
+
+		vector<string> queries = parseStringData(queryFileName);
+		for (string query : queries) {
+			cout << minhashFilter.numCollisions(query) << endl;
+		}
 
   } else {
     cerr << "This type of data is not supported yet" << endl;

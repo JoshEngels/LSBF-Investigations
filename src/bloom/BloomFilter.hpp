@@ -12,7 +12,7 @@ public:
   // HashFunction objects, and all of them should ideally have range greater
   // than or equal to hashRange, otherwise there will be wasted space inside the
   // filter
-  BloomFilter(std::vector<HashFunction<T> *> hashes, size_t hashRange);
+	BloomFilter(HashFunction<T> * hashes, size_t hashRange);
 
   // Add a point to the bloom filter
   void addPoint(T point);
@@ -24,7 +24,7 @@ public:
   ~BloomFilter();
 
 private:
-  std::vector<HashFunction<T> *> hashes;
+  HashFunction<T> * hashes;
   size_t hashRange;
   size_t numHashes;
   std::shared_ptr<char> bitArray;

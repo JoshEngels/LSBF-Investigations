@@ -4,10 +4,11 @@
 #include <MurmurHash3.hpp>
 #include <cstdint>
 #include <iostream>
+#include <vector>
 
 template <class T> class HashFunction {
 public:
-  virtual uint64_t getVal(T item) {
+  virtual std::vector<uint64_t> getVal(T item) {
     std::cerr << "This (generic HashFunction getVal) should not get called!\n";
     exit(1);
   };
@@ -15,6 +16,11 @@ public:
   virtual ~HashFunction() {
     // No op
   }
+
+	virtual size_t getNumHashes() {
+		std::cerr << "This (generic HashFunction getNumHashes) should not get called!\n";
+		exit(1);
+	}
 
 protected:
   // This function bijectively maps the two input 64 bit integers to a 128 bit

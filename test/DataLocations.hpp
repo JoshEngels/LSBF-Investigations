@@ -1,1 +1,1 @@
-#define ROCK_YOU_LOCATION "/home/josh/LDBF/data/rockyou.txt"
+#define ROCK_YOU_LOCATION "/home/josh/LDBF/data/rockyou-data"

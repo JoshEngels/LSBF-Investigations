@@ -49,10 +49,12 @@ SCENARIO("Normal bloom filters (with Murmur Hash) work") {
     vector<string> data = parseStringData(ROCK_YOU_LOCATION);
     size_t hashRange = 1.44 * data.size();
     size_t numHashes = 5;
-    vector<HashFunction<string> *> hashFunctions;
-    for (size_t i = 0; i < numHashes; i++) {
-      hashFunctions.push_back(new MurmurHashFunction(i));
+		vector<uint32_t> keys;
+    for (uint32_t i = 0; i < numHashes; i++) {
+			keys.push_back(i);
     }
+    HashFunction<string> * hashFunctions = new MurmurHashFunction(keys);
+
     BloomFilter<string> normalFilter =
         BloomFilter<string>(hashFunctions, hashRange);
 
