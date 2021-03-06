@@ -38,18 +38,21 @@ string getRandomString(size_t length) {
 
 int main(int argc, char **argv) {
 
-  if (argc < 4) {
+  if (argc < 8) {
     cout << "This program runs tests of a LSBF. One need to call this program"
             "with 'runme <data_file_name> <query_file_name> <data_type> "
-            "<data_dim>'"
+            "<data_dim> <num_hashes> <hash_range> <hash_multiplicity>'"
          << endl;
-    cout << "\t<data_file_name>: Name of file containing the data." << endl;
-    cout << "\t<queries_file_name>: Name of file containing the queries."
+    cout << "\t<data_file_name>: Name of file containing the data" << endl;
+    cout << "\t<queries_file_name>: Name of file containing the queries"
          << endl;
-    cout << "\t<data_type>: 1 is strings, 2 is doubles." << endl;
+    cout << "\t<data_type>: 1 is doubles, 10 + k is strings split into kmers of of size k" << endl;
     cout << "\t<data_dim>: 1 is 1 entry per line, 2 is a vector per line "
             "(space seperated)."
          << endl;
+		cout << "<num_hashes>: Number of hashes in the bloom filter" << endl;
+		cout << "<hash_range>: 2^hash_range is the number of bits in the bloom filter" << endl;
+		cout << "<hash_multiplicity>: Number of hashes to concatenate together in each repetition" << endl;
     exit(0);
   }
 
@@ -60,35 +63,28 @@ int main(int argc, char **argv) {
   char *queryFileName = argv[2];
   int dataType = stoi(argv[3]);
   int dataDim = stoi(argv[4]);
+	int numHashes = stoi(argv[5]);
+	size_t hashRange = 1 << stoi(argv[6]);
+	int concatenationNum = stoi(argv[7]);
 
-  if (dataType == 1 && dataDim == 1) {
-    // cout << "Starting test of LSH Bloom filter of string data (using trimers
-    // "
-    //         "and minhash)"
-    //      << endl;
+	printf("Threshold results for %s, statistics %d %d %d %zu %d\n", dataFileName, dataType, dataDim, numHashes, hashRange, concatenationNum); 
+
+  if (dataType > 10 && dataDim == 1) {
+
     vector<string> data = parseStringData(dataFileName);
 
-    size_t hashRange = 1 << 25;
-    size_t numHashes = 20;
-    size_t concatenationNum = 3;
-    size_t kmer = 3;
+    size_t kmer = dataType - 10;
     HashFunction<string> *hashFunctions =
         new KMerStringMinHashFunction(kmer, 7, numHashes, concatenationNum);
     BloomFilter<string> minhashFilter =
         BloomFilter<string>(hashFunctions, hashRange);
-    size_t i = 0;
     for (string item : data) {
-      i++;
-      if (i % 10000 == 0) {
-        cout << i * 100 / data.size() << endl;
-      }
       minhashFilter.addPoint(item);
     }
-    cout << "Done adding items" << endl;
 
     vector<string> queries = parseStringData(queryFileName);
     for (string query : queries) {
-      cout << minhashFilter.numCollisions(query) << endl;
+      cout << query << " " << minhashFilter.numCollisions(query) << endl;
     }
 
   } else {

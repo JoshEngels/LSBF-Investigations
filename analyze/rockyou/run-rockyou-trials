@@ -1,0 +1,11 @@
+#!/bin/bash
+for num_hashes in {10..100..10}
+do
+	for hash_range in {16..27}
+	do
+		for multiplicity in {1..4}
+		do
+			../../build/runme ../../data/rockyou-data-small ../../data/rockyou-queries 13 1 $num_hashes $hash_range $multiplicity
+ 		done
+	done
+done
