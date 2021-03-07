@@ -1,4 +1,4 @@
-# Example call from within folder: python3 analyze.py rockyou-output ../data/rockyou-queries
+# Example call from within folder: python3 analyze.py ../output/rockyou-output ../data/rockyou/rockyou-queries-gt rockyou 1000000
 
 import sys 
 
@@ -30,10 +30,14 @@ with open(query_file, "r") as f:
 		sim_map[password] = sim
 
 
-cutoffs = [0.05 * i for i in range(2, 18)]
-best_aucs = [0 for i in range(len(cutoffs))]
-best_stats = [[] for i in range(len(cutoffs))]
-best_accuracies = [0 for i in range(len(cutoffs))]
+r_cutoffs = [0.05 * i for i in range(2, 18)]
+best_aucs = [0 for i in range(len(r_cutoffs))]
+best_stats = [[] for i in range(len(r_cutoffs))]
+best_accuracies = [0 for i in range(len(r_cutoffs))]
+
+# Track aucs for size thresholds
+size_thresholds = [2 ** i for i in range(-4, 8)]
+best_aucs_sized = [[0 for i in range(len(r_cutoffs))] for j in range(len(size_thresholds))]
 
 output_name = sys.argv[1]
 with open(output_name, "r") as output_file:
@@ -43,14 +47,14 @@ with open(output_name, "r") as output_file:
 			break
 		
 		# Here, because of file format current line starts with Threshold
-		print(line)
 		statistics = [int(i) for i in line.split()[-5:]]
-		size = statistics[2] * statistics[3] / 8 / (10 ** 9)
+		bits_per_item = statistics[2] * statistics[3] / 8 / int(sys.argv[4])
+		# print(bits_per_item)
 		# Need an entry for every threshold, cutoff pair to generate auc 
-		true_positive_counts = [[0 for _ in range(statistics[2])] for _ in range(len(cutoffs))]
-		false_positive_counts = [[0 for _ in range(statistics[2])] for _ in range(len(cutoffs))]
-		total_positive = [0 for _ in range(len(cutoffs))]
-		total_negative = [0 for _ in range(len(cutoffs))]
+		true_positive_counts = [[0 for _ in range(statistics[2])] for _ in range(len(r_cutoffs))]
+		false_positive_counts = [[0 for _ in range(statistics[2])] for _ in range(len(r_cutoffs))]
+		total_positive = [0 for _ in range(len(r_cutoffs))]
+		total_negative = [0 for _ in range(len(r_cutoffs))]
 
 		while True:
 			line = output_file.readline().strip()
@@ -66,7 +70,7 @@ with open(output_name, "r") as output_file:
 			query_sim = sim_map[password]
 
 			# Fill in entries in counts arrays
-			for i, cutoff in enumerate(cutoffs):
+			for i, cutoff in enumerate(r_cutoffs):
 				
 				if cutoff <= query_sim: # Positive
 					total_positive[i] += 1
@@ -86,12 +90,18 @@ with open(output_name, "r") as output_file:
 		# Calculate and update aucs
 		for i, (tprs, fprs) in enumerate(zip(true_positive_rates, false_positive_rates)):
 			auc = calculate_auc(tprs, fprs)
+			
+			# Update aucs
 			if auc > best_aucs[i]:
 				best_aucs[i] = auc
 				best_stats[i] = statistics
+			for index, size_threshold in enumerate(size_thresholds):
+				if bits_per_item > size_threshold:
+					continue 
+				best_aucs_sized[index][i] = max(best_aucs_sized[index][i], auc)
 
 		# Calculate and update accuracy
-		for i in range(len(cutoffs)):
+		for i in range(len(r_cutoffs)):
 			for t in range(statistics[2]):
 				best_accuracies[i] = max(best_accuracies[i], (true_positive_counts[i][t] + total_negative[i] - false_positive_counts[i][t]) / (total_negative[i] + total_positive[i]))
 		
@@ -99,6 +109,8 @@ with open(output_name, "r") as output_file:
 print(best_aucs)
 print(best_stats)
 print(best_accuracies)
+print(best_aucs_sized)
+
 
 titlefontsize = 22
 axisfontsize = 18
@@ -107,9 +119,13 @@ ls = "--"
 
 import matplotlib
 import matplotlib.pyplot as plt
-plt.plot(cutoffs, best_accuracies, linestyle=ls)
+matplotlib.use("agg")
+for size_results, size_threshold in zip(best_aucs_sized, size_thresholds):
+	if (size_results[0] != 0):
+		plt.plot(r_cutoffs, size_results, linestyle=ls, label=f"Max {size_threshold} bits")
+plt.legend(loc='lower right')
 plt.ylabel("AUC", fontsize=axisfontsize)
 plt.xlabel("Similarity Threshold", fontsize=axisfontsize)
-plt.title(f"Best AUC of LSBF on {sys.argv[3]}", fontsize=titlefontsize)
-plt.show()
+plt.title(f"Best AUC of LSBF on {sys.argv[3]}-{sys.argv[4]}", fontsize=titlefontsize)
+plt.savefig(f"AUC-{sys.argv[3]}-{sys.argv[4]}.png".title(), bbox_inches='tight')
 
