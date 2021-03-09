@@ -43,7 +43,7 @@ with open(output_name, "r") as output_file:
 			break
 		
 		# Here, because of file format current line starts with Threshold
-		# print(line)
+		print(line)
 		statistics = [int(i) for i in line.split()[-5:]]
 		size = statistics[2] * statistics[3] / 8 / (10 ** 9)
 		# Need an entry for every threshold, cutoff pair to generate auc 

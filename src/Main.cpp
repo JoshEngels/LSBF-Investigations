@@ -15,9 +15,9 @@ vector<string> parseStringData(char *fileName) {
   // https://stackoverflow.com/questions/7868936/read-file-line-by-line-using-ifstream-in-c
   vector<string> result;
   ifstream infile(fileName);
-  string nextString;
-  while (infile >> nextString) {
-    result.push_back(nextString);
+  std::string line;
+  while (getline(infile, line)) {
+    result.push_back(line);
   }
   return result;
 }
