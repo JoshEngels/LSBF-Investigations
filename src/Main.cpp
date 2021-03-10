@@ -58,6 +58,7 @@ string getRandomString(size_t length) {
 int main(int argc, char **argv) {
 
   // TODO: Change input to list of values for each data type
+  // TODO: Center vector data?
   if (argc < 9) {
     cout << "This program runs tests of a LSBF. One need to call this program"
             "with 'runme <data_file_name> <query_file_name> <data_type> "
@@ -127,8 +128,10 @@ int main(int argc, char **argv) {
 
     BloomFilter<vector<float>> minhashFilter =
         BloomFilter<vector<float>>(hashFunctions, hashRange);
+    size_t i = 0;
     for (vector<float> item : data) {
       minhashFilter.addPoint(item);
+      i++;
     }
 
     vector<vector<float>> queries = parseFloatVectorData(queryFileName);

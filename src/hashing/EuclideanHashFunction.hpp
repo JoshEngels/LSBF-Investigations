@@ -19,13 +19,15 @@ public:
     // https://www.cplusplus.com/reference/random/normal_distribution/
     std::default_random_engine generator;
     generator.seed(key);
-    std::normal_distribution<double> distribution(0, 1);
+    std::normal_distribution<float> norm_d(0, 1);
+    std::uniform_real_distribution<float> unif_d(0.0, segments);
     for (size_t i = 0; i < numHashes * concatenationNum; i++) {
       std::vector<float> nextVector;
       for (size_t d = 0; d < vectorSize; d++) {
-        nextVector.push_back(distribution(generator));
+        nextVector.push_back(norm_d(generator));
       }
       randomVectors.push_back(nextVector);
+      randomOffsets.push_back(unif_d(generator));
     }
   }
 
@@ -34,9 +36,10 @@ public:
     for (size_t hash = 0; hash < numHashes; hash++) {
       uint64_t cumulativeHash = 0;
       for (size_t i = 0; i < concatenationNum; i++) {
-        cumulativeHash = bijectiveMap(dot(item, i), cumulativeHash);
+        cumulativeHash = bijectiveMap(dot(item, hash * concatenationNum + i),
+                                      cumulativeHash);
       }
-      result.push_back(cumulativeHash);
+      result[hash] = cumulativeHash;
     }
     return result;
   }
@@ -49,22 +52,24 @@ private:
   size_t numHashes;
   std::vector<std::vector<float>> randomVectors;
   std::vector<float> randomOffsets;
+  int maxSmallHash = 1 << 8;
 
   uint64_t dot(std::vector<float> item, size_t index) {
     std::vector<float> currentVector = randomVectors.at(index);
     float currentOffset = randomOffsets.at(index);
-    float total = 0;
+    double total = 0;
     for (size_t i = 0; i < item.size(); i++) {
       total += item.at(i) * currentVector.at(i);
     }
+    total += currentOffset;
     total /= segments;
-    total += 1 << 63;
-
-    // Make sure it's going to fit in 64 bits
-    if (total < 0 || total >= UINT64_MAX) {
-      std::cerr << "Euclidean hash cannot fit in 64 bits" << std::endl;
+    if (total >= maxSmallHash || total <= -maxSmallHash) {
+      std::cerr << "Euclidean hash is too big, try increasing r or increasing "
+                   "the maximum small hash size"
+                << std::endl;
       exit(1);
     }
+    total += maxSmallHash;
 
     return (uint64_t)total;
   }
