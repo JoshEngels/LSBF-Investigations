@@ -1,4 +1,4 @@
-# Example call from within folder: python3 analyze.py ../output/rockyou-output ../data/rockyou/rockyou-queries-gt rockyou 1000000
+# Example call from within folder: python3 size_thresholds_auc.py ../output/rockyou-trial-results ../data/rockyou/rockyou-queries-gt rockyou 1000000
 
 import sys 
 
@@ -48,7 +48,7 @@ with open(output_name, "r") as output_file:
 		
 		# Here, because of file format current line starts with Threshold
 		statistics = [int(i) for i in line.split()[-5:]]
-		bits_per_item = statistics[2] * statistics[3] / 8 / int(sys.argv[4])
+		bits_per_item = statistics[2] * statistics[3] / int(sys.argv[4])
 		# print(bits_per_item)
 		# Need an entry for every threshold, cutoff pair to generate auc 
 		true_positive_counts = [[0 for _ in range(statistics[2])] for _ in range(len(r_cutoffs))]
@@ -127,5 +127,5 @@ plt.legend(loc='lower right')
 plt.ylabel("AUC", fontsize=axisfontsize)
 plt.xlabel("Similarity Threshold", fontsize=axisfontsize)
 plt.title(f"Best AUC of LSBF on {sys.argv[3]}-{sys.argv[4]}", fontsize=titlefontsize)
-plt.savefig(f"AUC-{sys.argv[3]}-{sys.argv[4]}.png".title(), bbox_inches='tight')
+plt.savefig(f"AUC-{sys.argv[3]}-{sys.argv[4]}.png", bbox_inches='tight')
 
