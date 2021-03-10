@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
 
     vector<string> queries = parseStringData(queryFileName);
     for (string query : queries) {
-      cout << query << " " << minhashFilter.numCollisions(query) << endl;
+      cout << minhashFilter.numCollisions(query) << endl;
     }
 
   } else if (dataType == 2 && dataDim == 2) {
@@ -126,17 +126,15 @@ int main(int argc, char **argv) {
         extra_hash_info, 7, numHashes, concatenationNum, data.at(0).size());
     (void)hashFunctions;
 
-    BloomFilter<vector<float>> minhashFilter =
+    BloomFilter<vector<float>> filter =
         BloomFilter<vector<float>>(hashFunctions, hashRange);
-    size_t i = 0;
     for (vector<float> item : data) {
-      minhashFilter.addPoint(item);
-      i++;
+      filter.addPoint(item);
     }
 
     vector<vector<float>> queries = parseFloatVectorData(queryFileName);
     for (vector<float> query : queries) {
-      cout << minhashFilter.numCollisions(query) << endl;
+      cout << filter.numCollisions(query) << endl;
     }
 
   } else {

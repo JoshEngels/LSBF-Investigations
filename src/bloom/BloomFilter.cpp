@@ -30,6 +30,16 @@ template <typename T> size_t BloomFilter<T>::numCollisions(T point) {
   return count;
 }
 
+template <typename T> size_t BloomFilter<T>::numOnes() {
+  size_t count = 0;
+  for (size_t h = 0; h < numHashes; h++) {
+    for (size_t i = 0; i < hashRange; i++) {
+      count += getBit(h, i);
+    }
+  }
+  return count;
+}
+
 template <typename T> BloomFilter<T>::~BloomFilter() { delete hashes; }
 
 #endif

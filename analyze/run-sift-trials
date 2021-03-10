@@ -1,0 +1,12 @@
+#!/bin/bash
+# Run with e.g. ./run-rockyou-trials ../output/rockyou-trials
+for num_hashes in {10..50..10}
+do
+	for hash_range in {18..24..2}
+	do
+		for multiplicity in {1..11..2}
+		do
+			../build/runme ../data/sift/data ../data/sift/data 2 2 $num_hashes $hash_range $multiplicity 20
+ 		done
+	done
+done
