@@ -8,6 +8,8 @@
 
 template <class T> class HashFunction {
 public:
+  // TODO: add getRange function?
+
   virtual std::vector<uint64_t> getVal(T item) {
     std::cerr << "This (generic HashFunction getVal) should not get called!\n";
     exit(1);
