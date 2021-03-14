@@ -1,4 +1,9 @@
 build/*
 .vscode/*
-data/rockyou/*
 output/*
+
+# Sift
+data/sift/data 
+data/sift/sift-128-euclidean.hdf5
+data/sift/queries 
+data/sift/query-distances

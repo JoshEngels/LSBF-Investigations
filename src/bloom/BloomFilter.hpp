@@ -23,6 +23,9 @@ public:
   // Destructor deletes vector of hash functions too
   ~BloomFilter();
 
+  // Returns how many ones the bloom filter has
+  size_t numOnes();
+
 private:
   HashFunction<T> *hashes;
   size_t hashRange;

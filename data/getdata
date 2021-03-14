@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Rockyou is complete
+
+# Sift
+cd sift
+wget http://ann-benchmarks.com/sift-128-euclidean.hdf5
+python3 split.py

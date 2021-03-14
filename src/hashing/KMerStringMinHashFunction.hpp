@@ -1,5 +1,5 @@
-#ifndef KSMHP_C
-#define KSMHP_C
+#ifndef KSMHF_H
+#define KSMHF_H
 
 #include "HashFunction.hpp"
 #include "MurmurHash3.hpp"
