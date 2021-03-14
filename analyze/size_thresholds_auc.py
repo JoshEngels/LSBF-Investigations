@@ -36,7 +36,7 @@ best_stats = [[] for i in range(len(r_cutoffs))]
 best_accuracies = [0 for i in range(len(r_cutoffs))]
 
 # Track aucs for size thresholds
-size_thresholds = [2 ** i for i in range(-4, 8)]
+size_thresholds = [2 ** i for i in range(-2, 12)]
 best_aucs_sized = [[0 for i in range(len(r_cutoffs))] for j in range(len(size_thresholds))]
 
 output_name = sys.argv[1]
