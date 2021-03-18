@@ -1,6 +1,31 @@
-# Example call from within folder: python3 size_thresholds_auc.py ../output/rockyou-trial-results ../data/rockyou/rockyou-queries-gt rockyou 1000000
+# Example call from within folder: 
+# python3 size_thresholds_auc.py <results> <query similarities> <dataset title> <num_points> <comparison type> <r (for sim and dist-to-sim)>
+# python3 size_thresholds_auc.py ../output/rockyou-results ../data/rockyou/query-sims rockyou 1000000 sim 10
+# python3 size_thresholds_auc.py ../output/sift-results ../data/sift/query-distances sift 1000000 dist
+# python3 size_thresholds_auc.py ../output/sift-results ../data/sift/query-distances sift 1000000 dist-to-sim 300
 
 import sys 
+from math import *
+
+# See https://stackoverflow.com/questions/809362/how-to-calculate-cumulative-normal-distribution
+def phi(x):
+    #'Cumulative distribution function for the standard normal distribution'
+    return (1.0 + erf(x / sqrt(2.0))) / 2.0
+
+def calculate_sim(distance, r):
+	return 1 - 2 * phi(-r / distance) - 2 / (sqrt(2 * pi) * r / distance) * (1 - exp(-r*r / 2 / (distance * distance)))
+	
+output_file = sys.argv[1]
+query_file = sys.argv[2]
+dataset_name = sys.argv[3]
+num_points = int(sys.argv[4])
+compare_type = sys.argv[5]
+if compare_type in ["sim", "dist-to-sim"]:
+	r_value = int(sys.argv[6])
+
+if compare_type not in ["sim", "dist", "dist-to-sim"]:
+	print("Invalid compare type")
+	exit(0)
 
 # Assume straight line between points
 def calculate_auc(tprs, fprs):
@@ -18,19 +43,32 @@ def calculate_auc(tprs, fprs):
 	return auc
 
 
-query_file = sys.argv[2]
-sim_map = {}
+ground = []
 with open(query_file, "r") as f:
 	while True:
 		line = f.readline().strip()
 		if line == "":
 			break
-		password = line[:-5]
-		sim = float(line[-4:])
-		sim_map[password] = sim
+		ground.append(float(line))
 
-
-r_cutoffs = [0.05 * i for i in range(2, 18)]
+num_buckets = 10
+if (compare_type == "sim"):
+	min_sim = min(ground)
+	max_sim = max(ground)
+	interval_size = (max_sim - min_sim) / (num_buckets + 2)
+	r_cutoffs = [min_sim + i * interval_size for i in range(1, num_buckets + 1)]
+elif (compare_type == "dist-to-sim"):
+	ground_sims = [calculate_sim(d, r_value) for d in ground]
+	min_sim = min(ground_sims)
+	max_sim = max(ground_sims)
+	interval_size = (max_sim - min_sim) / (num_buckets + 2)
+	r_cutoffs = [min_sim + i * interval_size for i in range(1, num_buckets + 1)]
+else:
+	min_dist = min(ground)
+	max_dist = max(ground)
+	interval_size = (max_dist - min_dist) / (num_buckets + 2)
+	r_cutoffs = [min_dist + i * interval_size for i in range(1, num_buckets + 1)]
+	
 best_aucs = [0 for i in range(len(r_cutoffs))]
 best_stats = [[] for i in range(len(r_cutoffs))]
 best_accuracies = [0 for i in range(len(r_cutoffs))]
@@ -38,52 +76,65 @@ best_accuracies = [0 for i in range(len(r_cutoffs))]
 # Track aucs for size thresholds
 size_thresholds = [2 ** i for i in range(-2, 12)]
 best_aucs_sized = [[0 for i in range(len(r_cutoffs))] for j in range(len(size_thresholds))]
+best_stats_sized = [[[] for i in range(len(r_cutoffs))] for j in range(len(size_thresholds))]
 
-output_name = sys.argv[1]
-with open(output_name, "r") as output_file:
-	line = output_file.readline().strip()
+
+with open(output_file, "r") as output:
+	line = output.readline().strip()
 	while True:
 		if line == "":
 			break
 		
 		# Here, because of file format current line starts with Threshold
-		statistics = [int(i) for i in line.split()[-5:]]
-		bits_per_item = statistics[2] * statistics[3] / int(sys.argv[4])
+		print(line)
+		words = line.split()
+		statistics = [int(i) for i in words[words.index("statistics") + 1:]]
+		bits_per_item = statistics[2] * statistics[3] / num_points
 		# print(bits_per_item)
 		# Need an entry for every threshold, cutoff pair to generate auc 
 		true_positive_counts = [[0 for _ in range(statistics[2])] for _ in range(len(r_cutoffs))]
 		false_positive_counts = [[0 for _ in range(statistics[2])] for _ in range(len(r_cutoffs))]
 		total_positive = [0 for _ in range(len(r_cutoffs))]
 		total_negative = [0 for _ in range(len(r_cutoffs))]
+		query_index = 0
 
 		while True:
-			line = output_file.readline().strip()
+			line = output.readline().strip()
 			if line.startswith("Threshold") or line == "":
 				break
 			
-			# Parse password and threshold score
-			last_space = -2
-			while line[last_space] != " ":
-				last_space -= 1
-			password = line[:last_space]
-			threshold = int(line[last_space + 1:])
-			query_sim = sim_map[password]
+			# Parse threshold score
+			threshold = int(line)
+			if (compare_type == "sim" or compare_type == "dist"):
+				query_gt = ground[query_index]
+			else:
+				query_gt = calculate_sim(ground[query_index], int(statistics[5]))
+			query_index += 1
 
 			# Fill in entries in counts arrays
 			for i, cutoff in enumerate(r_cutoffs):
 				
-				if cutoff <= query_sim: # Positive
+				if compare_type == "sim" or compare_type == "dist-to-sim":
+					positive = cutoff <= query_gt
+				else:
+					positive = query_gt <= cutoff
+
+
+				if positive:
 					total_positive[i] += 1
-				if cutoff > query_sim: # Negative
-					total_negative[i] += 1 
-				
+				else:
+					total_negative[i] += 1
+
 				for t in range(statistics[2]):
-						if t <= threshold and cutoff <= query_sim: # True positive
+						if t <= threshold and positive: # True positive
 							true_positive_counts[i][t] += 1
-						if t <= threshold and cutoff > query_sim: # False positive
+						if t <= threshold and not positive: # False positive
 							false_positive_counts[i][t] += 1
 
+
 		# Calculate rates
+		# print(total_positive)
+		# print(total_negative)
 		true_positive_rates = [[count / total_positive[i] for count in arr] for i, arr in enumerate(true_positive_counts)]
 		false_positive_rates = [[count / total_negative[i] for count in arr] for i, arr in enumerate(false_positive_counts)]
 
@@ -98,7 +149,9 @@ with open(output_name, "r") as output_file:
 			for index, size_threshold in enumerate(size_thresholds):
 				if bits_per_item > size_threshold:
 					continue 
-				best_aucs_sized[index][i] = max(best_aucs_sized[index][i], auc)
+				if best_aucs_sized[index][i] < auc:
+					best_aucs_sized[index][i] = auc
+					best_stats_sized[index][i] = statistics
 
 		# Calculate and update accuracy
 		for i in range(len(r_cutoffs)):
@@ -106,10 +159,12 @@ with open(output_name, "r") as output_file:
 				best_accuracies[i] = max(best_accuracies[i], (true_positive_counts[i][t] + total_negative[i] - false_positive_counts[i][t]) / (total_negative[i] + total_positive[i]))
 		
 
-print(best_aucs)
-print(best_stats)
-print(best_accuracies)
-print(best_aucs_sized)
+# print(best_aucs)
+# print(best_stats)
+# print(best_accuracies)
+# print(best_aucs_sized)
+# print(best_stats)
+# print(best_stats_sized)
 
 
 titlefontsize = 22
@@ -125,7 +180,15 @@ for size_results, size_threshold in zip(best_aucs_sized, size_thresholds):
 		plt.plot(r_cutoffs, size_results, linestyle=ls, label=f"Max {size_threshold} bits")
 plt.legend(loc='lower right')
 plt.ylabel("AUC", fontsize=axisfontsize)
-plt.xlabel("Similarity Threshold", fontsize=axisfontsize)
-plt.title(f"Best AUC of LSBF on {sys.argv[3]}-{sys.argv[4]}", fontsize=titlefontsize)
-plt.savefig(f"AUC-{sys.argv[3]}-{sys.argv[4]}.png", bbox_inches='tight')
+plt.xlabel(f"r-Threshold ({compare_type})", fontsize=axisfontsize)
+
+if (compare_type in ["sim", "dist-to-sim"]):
+	plt.title(f"Best AUC of LSBF on {dataset_name}-{num_points}-{r_value}", fontsize=titlefontsize)
+else:
+	plt.title(f"Best AUC of LSBF on {dataset_name}-{num_points}", fontsize=titlefontsize)
+if (compare_type in ["sim", "dist-to-sim"]):
+	plt.savefig(f"AUC-{dataset_name}-{num_points}-{r_value}.png", bbox_inches='tight')
+else:
+	plt.savefig(f"AUC-{dataset_name}-{num_points}.png", bbox_inches='tight')
+
 

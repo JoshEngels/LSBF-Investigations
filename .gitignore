@@ -1,6 +1,8 @@
 build/*
 .vscode/*
 output/*
+*.png
+*.out
 
 # Sift
 data/sift/data 
