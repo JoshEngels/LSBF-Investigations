@@ -1,5 +1,6 @@
 #include "BloomFilter.hpp"
 #include <iostream>
+#include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
@@ -12,7 +13,7 @@ public:
   LSBF_Euclidean(double cutoff, double dataDim, size_t oneFilterSize,
                  size_t numFilterReps)
       : cutoff(cutoff), dataDim(dataDim), oneFilterSize(oneFilterSize),
-        numFilterReps(numFilterReps), trained(false), filter(nullptr, 0) {}
+        numFilterReps(numFilterReps), trained(false) {}
 
   // See https://pybind11.readthedocs.io/en/stable/advanced/pycpp/numpy.html?highlight=numpy#arrays
   // for explanation of why we do py::array::c_style and py::array::forcecase
@@ -47,7 +48,7 @@ private:
   double cutoff, dataDim;
   size_t oneFilterSize, numFilterReps;
   bool trained;
-  BloomFilter<double> filter;
+  unique_ptr<BloomFilter<double>> filter;
 
   bool checkTrained(bool goal) {
     if (goal == trained) {
