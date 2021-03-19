@@ -8,6 +8,10 @@ python3
 pybind11, installed with pip
 c++ compiler
 
+To get all test datasets, from the top level folder run
+cd data 
+./getData
+
 Also note I have only tested this on Ubuntu.
 
 TODO: Add this all to a setup.py folder (use CMake?)
