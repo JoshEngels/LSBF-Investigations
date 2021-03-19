@@ -46,7 +46,8 @@ public:
     auto groundBuf = ground.request();
 
     if (dataBuf.ndim != 2 || trainingBuf.ndim != 2 || groundBuf.ndim != 1) {
-      // cout << dataBuf.ndim  << " " << trainingBuf.ndim << " " << groundBuf.ndim << endl;
+      // cout << dataBuf.ndim  << " " << trainingBuf.ndim << " " <<
+      // groundBuf.ndim << endl;
       throw runtime_error(
           "Data and training must be 2 dimensional Numpy arrays, ground truth "
           "must be a 1 dimensional Numpy array.");
@@ -59,12 +60,28 @@ public:
       throw runtime_error("Incorrect shape in one of parameters.");
     }
 
+    // Add data to stored hash
+    double *dataPtr = (double *)dataBuf.ptr;
+#pragma omp parallel
+    for (size_t i = 0; i < numDataPoints; i++) {
+      storedHashes.get()->storeVal(i, dataPtr + i * dataDim);
+    }
+    double *trainPtr = (double *)dataBuf.ptr;
+#pragma omp parallel
+    for (size_t i = 0; i < numTrainPoints; i++) {
+      storedHashes.get()->storeVal(i + numDataPoints, trainPtr + i * dataDim);
+    }
+
     state = 1;
   }
 
   size_t getNumCollisions(
       py::array_t<double, py::array::c_style | py::array::forcecast> query) {
     checkState(1);
+    auto queryBuf = query.request();
+    if ((size_t)queryBuf.ndim != 1 || (size_t)queryBuf.shape[0] != dataDim) {
+      throw runtime_error("Incorrect query shape.");
+    }
     return 0;
   }
   // py::array_t<size_t> getNumCollisionsBatch(py::array_t<double> queries) {}

@@ -26,13 +26,13 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 CPP_DEBUG_FLAS := -g -fno-omit-frame-pointer 
 CPP_OPT_FLAGS := -O2
 CPP_WARN_FLAGS := -Wall -Werror
-CPPFLAGS ?= -std=c++11 $(INC_FLAGS) $(CPP_WARN_FLAGS) $(CPP_OPT_FLAGS) $(CPP_DEBUG_FLAS) -MMD -MP
+CPPFLAGS ?= -std=c++11 $(INC_FLAGS) $(CPP_WARN_FLAGS) $(CPP_OPT_FLAGS) $(CPP_DEBUG_FLAS) -MMD -MP -fopenmp
 
 all: $(BUILD_DIR)/$(TARGET_TEST) $(BUILD_DIR)/$(TARGET_EXEC) $(BUILD_DIR)/$(TARGET_PYBIND)
 
 # Make target pybind
 $(BUILD_DIR)/$(TARGET_PYBIND): ./pybindings/lsbf.cpp
-	$(CXX) $(CPPFLAGS) -shared -fPIC $(shell python3 -m pybind11 --includes) ./pybindings/lsbf.cpp -o ./build/lsbf.so
+	$(CXX) $(CPPFLAGS) -shared -fPIC $(shell python3 -m pybind11 --includes) ./pybindings/lsbf.cpp -o $(BUILD_DIR)/$(TARGET_PYBIND)
 
 
 # Make target test, require object files to be created
