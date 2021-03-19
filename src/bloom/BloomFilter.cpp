@@ -2,6 +2,7 @@
 #define BF_C
 
 #include "BloomFilter.hpp"
+#include <cstring>
 
 using namespace std;
 

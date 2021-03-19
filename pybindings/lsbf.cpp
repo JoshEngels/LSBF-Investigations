@@ -1,5 +1,6 @@
 #include "BloomFilter.hpp"
 #include <EuclideanHashFunctionTraining.hpp>
+#include <EuclideanHashFunction.hpp>
 #include <iostream>
 #include <memory>
 #include <pybind11/numpy.h>
@@ -72,6 +73,11 @@ public:
       storedHashes.get()->storeVal(i + numDataPoints, trainPtr + i * dataDim);
     }
 
+    storedHashes.get()->setHashParameters(300, 3, 100);
+    // TODO: Build filter based off of trained values
+    // TODO: Change filter to doubles, rewrite EuclideanHashFunction
+    filter = make_shared<BloomFilter<vector<float>>>(new EuclideanHashFunction(300, 42, numFilterReps, 3, dataDim), oneFilterSize);
+
     state = 1;
   }
 
@@ -90,7 +96,7 @@ private:
   double cutoff;
   size_t dataDim, oneFilterSize, numFilterReps, numDataPoints, numTrainPoints;
   int state;
-  unique_ptr<BloomFilter<double>> filter;
+  shared_ptr<BloomFilter<vector<float>>> filter;
   shared_ptr<EuclideanHashFunctionTraining> storedHashes;
 
   bool checkState(int goalState) {
