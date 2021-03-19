@@ -1,0 +1,13 @@
+In the top level folder, run
+make
+export PYTHONPATH=$(pwd)/build:$PYTHONPATH
+to be able to use an LSBF from Python3.
+
+Note you will need the following dependencies:
+python3
+pybind11, installed with pip
+c++ compiler
+
+Also note I have only tested this on Ubuntu.
+
+TODO: Add this all to a setup.py folder (use CMake?)

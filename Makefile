@@ -3,6 +3,7 @@
 # Build and source directories, target executable name
 TARGET_EXEC ?= runme
 TARGET_TEST ?= testme
+TARGET_PYBIND ?= lsbf.so
 BUILD_DIR ?= ./build
 SRC_DIRS ?= src
 TEST_DIRS ?= test
@@ -27,7 +28,12 @@ CPP_OPT_FLAGS := -O2
 CPP_WARN_FLAGS := -Wall -Werror
 CPPFLAGS ?= -std=c++11 $(INC_FLAGS) $(CPP_WARN_FLAGS) $(CPP_OPT_FLAGS) $(CPP_DEBUG_FLAS) -MMD -MP
 
-all: $(BUILD_DIR)/$(TARGET_TEST) $(BUILD_DIR)/$(TARGET_EXEC)
+all: $(BUILD_DIR)/$(TARGET_TEST) $(BUILD_DIR)/$(TARGET_EXEC) $(BUILD_DIR)/$(TARGET_PYBIND)
+
+# Make target pybind
+$(BUILD_DIR)/$(TARGET_PYBIND): ./pybindings/lsbf.cpp
+	$(CXX) $(CPPFLAGS) -shared -fPIC $(shell python3 -m pybind11 --includes) ./pybindings/lsbf.cpp -o ./build/lsbf.so
+
 
 # Make target test, require object files to be created
 $(BUILD_DIR)/$(TARGET_TEST): $(TESTOBJS)
