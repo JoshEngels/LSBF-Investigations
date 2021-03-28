@@ -121,21 +121,21 @@ int main(int argc, char **argv) {
     }
 
   } else if (dataType == 2 && dataDim == 2) {
-    vector<vector<float>> data = parseFloatVectorData(dataFileName);
-    HashFunction<vector<float>> *hashFunctions = new EuclideanHashFunction(
-        extra_hash_info, 7, numHashes, concatenationNum, data.at(0).size());
-    (void)hashFunctions;
+    // vector<vector<float>> data = parseFloatVectorData(dataFileName);
+    // HashFunction<vector<float>> *hashFunctions = new EuclideanHashFunction(
+    //     extra_hash_info, 7, numHashes, concatenationNum, data.at(0).size());
+    // (void)hashFunctions;
 
-    BloomFilter<vector<float>> filter =
-        BloomFilter<vector<float>>(hashFunctions, hashRange);
-    for (vector<float> item : data) {
-      filter.addPoint(item);
-    }
+    // BloomFilter<vector<float>> filter =
+    //     BloomFilter<vector<float>>(hashFunctions, hashRange);
+    // for (vector<float> item : data) {
+    //   filter.addPoint(item);
+    // }
 
-    vector<vector<float>> queries = parseFloatVectorData(queryFileName);
-    for (vector<float> query : queries) {
-      cout << filter.numCollisions(query) << endl;
-    }
+    // vector<vector<float>> queries = parseFloatVectorData(queryFileName);
+    // for (vector<float> query : queries) {
+    //   cout << filter.numCollisions(query) << endl;
+    // }
 
   } else {
     cerr << "This type of data is not supported yet" << endl;

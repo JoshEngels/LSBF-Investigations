@@ -11,7 +11,7 @@ public:
   // of which are of size hashRange. Note that hashes should be a vector of
   // HashFunction objects, and all of them should ideally have range greater
   // than or equal to hashRange, otherwise there will be wasted space inside the
-  // filter
+  // filter. The destructor does not delete the hashes.
   BloomFilter(HashFunction<T> *hashes, size_t hashRange);
 
   // Add a point to the bloom filter
@@ -19,9 +19,6 @@ public:
 
   // Get number of collisions for a test point
   size_t numCollisions(T point);
-
-  // Destructor deletes vector of hash functions too
-  ~BloomFilter();
 
   // Returns how many ones the bloom filter has
   size_t numOnes();

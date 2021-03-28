@@ -1,7 +1,7 @@
 #ifndef HF_H
 #define HF_H
 
-#include <MurmurHash3.hpp>
+#include "MurmurHash3.hpp"
 #include <cstdint>
 #include <iostream>
 #include <vector>
@@ -43,6 +43,7 @@ protected:
     uint64_t hashes[2];
     MurmurHash3_x64_128(pointer, length, key, &hashes[0]);
     return bijectiveMap(hashes[0], hashes[1]);
+    return 0;
   }
 };
 

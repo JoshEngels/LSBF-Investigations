@@ -41,6 +41,4 @@ template <typename T> size_t BloomFilter<T>::numOnes() {
   return count;
 }
 
-template <typename T> BloomFilter<T>::~BloomFilter() { delete hashes; }
-
 #endif

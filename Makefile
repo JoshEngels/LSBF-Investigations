@@ -9,12 +9,14 @@ SRC_DIRS ?= src
 TEST_DIRS ?= test
 MAIN_FILE ?= src/Main.cpp # Do this to avoid including main file when doing tests
 
+SRCS_WITHOUT_MAIN := $(shell find $(SRC_DIRS) -name '*.cpp' -not -path $(MAIN_FILE))
+
 # Find cpp source files
 SRCS := $(shell find $(SRC_DIRS) -name '*.cpp')
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 
-TESTSRCS := $(shell find $(SRC_DIRS) -name '*.cpp' -not -path $(MAIN_FILE)) $(shell find $(TEST_DIRS) -name '*.cpp')
+TESTSRCS := $(SRCS_WITHOUT_MAIN) $(shell find $(TEST_DIRS) -name '*.cpp')
 TESTOBJS := $(TESTSRCS:%=$(BUILD_DIR)/%.o)
 TESTDEPS := $(TESTOBJS:.o=.d)
 
@@ -32,7 +34,7 @@ all: $(BUILD_DIR)/$(TARGET_TEST) $(BUILD_DIR)/$(TARGET_EXEC) $(BUILD_DIR)/$(TARG
 
 # Make target pybind
 $(BUILD_DIR)/$(TARGET_PYBIND): ./pybindings/lsbf.cpp
-	$(CXX) $(CPPFLAGS) -shared -fPIC $(shell python3 -m pybind11 --includes) ./pybindings/lsbf.cpp -o $(BUILD_DIR)/$(TARGET_PYBIND)
+	$(CXX) $(CPPFLAGS)  $(shell python3 -m pybind11 --includes) -shared -fPIC ./pybindings/lsbf.cpp $(SRCS_WITHOUT_MAIN) -o $(BUILD_DIR)/$(TARGET_PYBIND)
 
 
 # Make target test, require object files to be created
