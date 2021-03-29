@@ -34,7 +34,7 @@ public:
     for (size_t hashNum = 0; hashNum < maxHashes; hashNum++) {
       hashes.push_back(dot(item, hashNum));
     }
-    rawHashes.at(i) = hashes;
+    rawHashes[i] = hashes;
   }
 
   void setHashParameters(double r, double concatenationNum, size_t numHashes) {
@@ -68,8 +68,8 @@ public:
     // Generate result
     std::vector<uint64_t> result;
     for (size_t i = 0; i < numHashes; i++) {
-      uint64_t hash = getMurmurHash64((char *)(&transformedData[i]),
-                                      concatenationNum * sizeof(int), 42);
+      uint64_t hash = getMurmurHash64((char *)(transformedData.data() + i * concatenationNum),
+                                      concatenationNum * sizeof(int), i);
       result.push_back(hash);
     }
     return result;
@@ -80,8 +80,8 @@ private:
   std::vector<std::vector<double>> randomVectors;
   std::vector<std::vector<double>> rawHashes;
   size_t maxHashes, numDataVectors;
-
-  double r, concatenationNum, numHashes;
+  size_t concatenationNum, numHashes;
+  double r;
   std::vector<double> offsets;
 
   double dot(double *item, size_t index) {

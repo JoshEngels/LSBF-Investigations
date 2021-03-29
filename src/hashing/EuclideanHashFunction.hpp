@@ -11,7 +11,7 @@
 
 class EuclideanHashFunction : public HashFunction<double *> {
 public:
-  EuclideanHashFunction(size_t r, uint32_t key, size_t numHashes,
+  EuclideanHashFunction(double r, uint32_t key, size_t numHashes,
                         size_t concatenationNum, size_t vectorSize)
       : segments(r), concatenationNum(concatenationNum), numHashes(numHashes) {
 
@@ -41,8 +41,8 @@ public:
     // Generate result
     std::vector<uint64_t> result;
     for (size_t i = 0; i < numHashes; i++) {
-      uint64_t hash = getMurmurHash64((char *)(&transformedData[i]),
-                                      concatenationNum * sizeof(int), 42);
+      uint64_t hash = getMurmurHash64((char *)(transformedData.data() + i * concatenationNum),
+                                      concatenationNum * sizeof(int), i);
       result.push_back(hash);
     }
     return result;
@@ -51,7 +51,7 @@ public:
   size_t getNumHashes() { return numHashes; }
 
 private:
-  size_t segments;
+  double segments;
   size_t concatenationNum;
   size_t numHashes;
   std::vector<std::vector<double>> randomVectors;

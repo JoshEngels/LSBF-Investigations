@@ -2,15 +2,26 @@ import lsbf
 import numpy as np
 
 cutoff = 200
-data_dim = 3
-one_filter_size = 1000000
+one_filter_size = 10000000
 num_filters = 100
-num_data_points = 2
-num_train_points = 1
+num_train_points = 5000
 key = 42
 
+# Read in dataset
+import h5py
+hf = h5py.File('../data/sift/sift-128-euclidean.hdf5', 'r')
+dataset = hf['train'][:]
+ground = hf['distances'][:,0]
+ground = np.where(ground < cutoff, True, False)
+data_dim = dataset.shape[1]
+num_data_points = dataset.shape[0]
+
+train_gt = ground[:num_train_points]
+train = hf['test'][:num_train_points]
+
+query_gt = ground[num_train_points:]
+query = hf['test'][num_train_points:]
+
+
 a = lsbf.LSBF_Euclidean(cutoff, data_dim, one_filter_size, num_filters, num_data_points, num_train_points, key)
-data = np.array([[1.0,2.0, 3.1], [1.3,2.0, 4]]) 
-train = np.array([[1.1, 2.1, 3.2]])
-ground = np.array([True])
-a.setupAndTrain(data, train, ground)
+a.setupAndTrain(dataset, train, train_gt)

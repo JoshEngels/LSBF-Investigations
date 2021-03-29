@@ -13,6 +13,13 @@ using namespace std;
 
 namespace py = pybind11;
 
+
+// TODO: Figure out how to set these better
+#define MIN_CONCATENATIONS 1
+#define MAX_CONCATENATIONS 64
+#define MIN_R 1
+#define MAX_R 1000
+
 double getAUC(bool *groundTruth, vector<size_t> thresholdResults) {
   size_t countTotalPositive = 0;
   size_t countTotalNegative = 0;
@@ -40,6 +47,12 @@ double getAUC(bool *groundTruth, vector<size_t> thresholdResults) {
       currentThreshold = results.at(i).first;
       tprs.push_back((double)countTruePositive / (double)countTotalPositive);
       fprs.push_back((double)countFalsePositive / (double)countTotalNegative);
+      cout << currentThreshold + 1 << " " << (double)countTruePositive / (double)countTotalPositive << " " << (double)countFalsePositive / (double)countTotalNegative << endl;
+    }
+    if (groundTruth[i]) {
+      countTruePositive++;
+    } else {
+      countFalsePositive++;
     }
   }
   tprs.push_back((double)countTruePositive / (double)countTotalPositive);
@@ -51,18 +64,14 @@ double getAUC(bool *groundTruth, vector<size_t> thresholdResults) {
   double lastFPR = 0;
   double lastTPR = 0;
   for (size_t i = 0; i < fprs.size(); i++) {
-    auc += (fprs.at(i) - lastFPR) * (lastTPR + tprs.at(i)) / 2;
-    lastFPR = fprs.at(i);
-    lastTPR = tprs.at(i);
+    if (lastTPR + tprs.at(i) != 0) {
+      auc += (fprs.at(i) - lastFPR) * (lastTPR + tprs.at(i)) / 2;
+      lastFPR = fprs.at(i);
+      lastTPR = tprs.at(i);
+    }
   }
   return auc;
 }
-
-// TODO: Figure out how to set these better
-#define MIN_CONCATENATIONS 1
-#define MAX_CONCATENATIONS 10
-#define MIN_R 1
-#define MAX_R 1000
 
 shared_ptr<EuclideanHashFunction>
 trainEuclidean(EuclideanHashFunctionTraining *storedHashes,
@@ -81,7 +90,7 @@ trainEuclidean(EuclideanHashFunctionTraining *storedHashes,
   //   lastlastR and currentR double lastR = MIN_R; double currentR = 2 * MIN_R;
   // }
 
-  storedHashes->setHashParameters(200, 3, numHashesToTrainWith);
+  storedHashes->setHashParameters(300, 32, numHashesToTrainWith);
   BloomFilter<size_t> testFilter =
       BloomFilter<size_t>(storedHashes, filterSize);
 
@@ -95,9 +104,10 @@ trainEuclidean(EuclideanHashFunctionTraining *storedHashes,
   // TODO: Parallelize
   vector<size_t> queryResults;
   for (size_t i = 0; i < numTestPoints; i++) {
-    queryResults.push_back(testFilter.numCollisions(numTestPoints + i));
+    queryResults.push_back(testFilter.numCollisions(numTrainPoints + i));
   }
-  cout << "AUC for 200-3: " << getAUC(groundTruth, queryResults) << endl;
+  cout << "AUC for 200-64: " << endl;
+  cout << getAUC(groundTruth, queryResults) << endl;
 
   // Return best Euclidean hash function
   return make_shared<EuclideanHashFunction>(200, 42, numHashesToTrainWith, 3,
@@ -117,7 +127,7 @@ public:
     srand(42);
 
     // Empty hash function for now
-    storedHashes = make_shared<EuclideanHashFunctionTraining>(
+    storedHashes = new EuclideanHashFunctionTraining(
         key + 1, numFilterReps * MAX_CONCATENATIONS, dataDim,
         numDataPoints + numTrainPoints);
   }
@@ -157,22 +167,23 @@ public:
 
     // Add data to stored hash
     double *dataPtr = (double *)dataBuf.ptr;
-#pragma omp parallel
+#pragma omp parallel for
     for (size_t i = 0; i < numDataPoints; i++) {
-      storedHashes.get()->storeVal(i, dataPtr + i * dataDim);
+      storedHashes->storeVal(i, dataPtr + i * dataDim);
     }
     double *trainPtr = (double *)trainingBuf.ptr;
-#pragma omp parallel
+
+#pragma omp parallel for
     for (size_t i = 0; i < numTrainPoints; i++) {
-      storedHashes.get()->storeVal(i + numDataPoints, trainPtr + i * dataDim);
+      storedHashes->storeVal(i + numDataPoints, trainPtr + i * dataDim);
     }
 
     EuclideanHashFunction *trainedHash =
-        trainEuclidean(storedHashes.get(), numFilterReps, oneFilterSize,
+        trainEuclidean(storedHashes, numFilterReps, oneFilterSize,
                        numDataPoints, numTrainPoints, (bool *)groundBuf.ptr,
                        dataDim)
             .get();
-    filter = make_shared<BloomFilter<double *>>(trainedHash, oneFilterSize);
+    filter = new BloomFilter<double *>(trainedHash, oneFilterSize);
     state = 1;
   }
 
@@ -191,8 +202,9 @@ private:
   double cutoff;
   size_t dataDim, oneFilterSize, numFilterReps, numDataPoints, numTrainPoints;
   int state;
-  shared_ptr<BloomFilter<double *>> filter;
-  shared_ptr<EuclideanHashFunctionTraining> storedHashes;
+  BloomFilter<double *> *filter;
+  EuclideanHashFunction *filterHashes;
+  EuclideanHashFunctionTraining *storedHashes;
 
   bool checkState(int goalState) {
     if (state == goalState) {
