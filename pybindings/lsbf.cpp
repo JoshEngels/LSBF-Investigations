@@ -7,12 +7,9 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
-
-
 using namespace std;
 
 namespace py = pybind11;
-
 
 // TODO: Figure out how to set these better
 #define MIN_CONCATENATIONS 1
@@ -47,7 +44,9 @@ double getAUC(bool *groundTruth, vector<size_t> thresholdResults) {
       currentThreshold = results.at(i).first;
       tprs.push_back((double)countTruePositive / (double)countTotalPositive);
       fprs.push_back((double)countFalsePositive / (double)countTotalNegative);
-      cout << currentThreshold + 1 << " " << (double)countTruePositive / (double)countTotalPositive << " " << (double)countFalsePositive / (double)countTotalNegative << endl;
+      cout << currentThreshold + 1 << " "
+           << (double)countTruePositive / (double)countTotalPositive << " "
+           << (double)countFalsePositive / (double)countTotalNegative << endl;
     }
     if (groundTruth[i]) {
       countTruePositive++;
