@@ -57,19 +57,17 @@ public:
 
   std::vector<uint64_t> getVal(size_t index) {
 
-    // Get transformed data
     std::vector<double> rawData = rawHashes.at(index);
-    std::vector<int> transformedData;
+    int transformedData[concatenationNum * numHashes];
     for (size_t i = 0; i < concatenationNum * numHashes; i++) {
-      transformedData.push_back((rawData[i] + offsets[i]) / r);
+      transformedData[i] = (rawData[i] + offsets[i]) / r;
     }
 
     // Generate result
     std::vector<uint64_t> result;
     for (size_t i = 0; i < numHashes; i++) {
-      uint64_t hash = getMurmurHash64(
-          (char *)(transformedData.data() + i * concatenationNum),
-          concatenationNum * sizeof(int), i);
+      uint64_t hash = getMurmurHash64(transformedData + i * concatenationNum,
+                                      concatenationNum * sizeof(int), i);
       result.push_back(hash);
     }
     return result;

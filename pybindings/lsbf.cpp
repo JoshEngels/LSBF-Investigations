@@ -6,16 +6,16 @@
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <utility>
 
 using namespace std;
 
 namespace py = pybind11;
 
 // TODO: Figure out how to set these better
-#define MIN_CONCATENATIONS 1
-#define MAX_CONCATENATIONS 64
-#define MIN_R 1
-#define MAX_R 1000
+#define TEST_NUM_FILTERS 20
+#define IMPROVEMENT_PERCENT_LIMIT 1
+#define MAX_CONCATENATIONS 32
 
 double getAUC(bool *groundTruth, vector<size_t> thresholdResults) {
   size_t countTotalPositive = 0;
@@ -69,38 +69,124 @@ double getAUC(bool *groundTruth, vector<size_t> thresholdResults) {
   return auc;
 }
 
-shared_ptr<EuclideanHashFunction>
-trainEuclidean(EuclideanHashFunctionTraining *storedHashes,
-               size_t numHashesToTrainWith, size_t filterSize,
-               size_t numTrainPoints, size_t numTestPoints, bool *groundTruth,
-               size_t dataDim) {
+pair<double, double> runTest(EuclideanHashFunctionTraining *storedHashes,
+                             size_t filterSize, size_t numDataPoints,
+                             size_t numTrainPoints, bool *groundTruth) {
 
-  cout << "Training Euclidean" << endl;
-
-  // TODO: Training
-
-  storedHashes->setHashParameters(300, 32, numHashesToTrainWith);
+  // Create test filter
   BloomFilter<size_t> testFilter =
       BloomFilter<size_t>(storedHashes, filterSize);
 
   // Add all train points
-  // TODO: Write a batch add method parallilized
-  for (size_t i = 0; i < numTrainPoints; i++) {
-    testFilter.addPoint(i);
+  vector<size_t> toAdd;
+  for (size_t i = 0; i < numDataPoints; i++) {
+    toAdd.push_back(i);
   }
+  testFilter.addPoints(toAdd);
 
-  // Do query and get AUC
-  // TODO: Parallelize
+  // Do query and get AUC and total number of collisions
+  double total = 0;
   vector<size_t> queryResults;
-  for (size_t i = 0; i < numTestPoints; i++) {
-    queryResults.push_back(testFilter.numCollisions(numTrainPoints + i));
+  for (size_t i = 0; i < numTrainPoints; i++) {
+    size_t numCol = testFilter.numCollisions(numDataPoints + i);
+    total += numCol;
+    queryResults.push_back(numCol);
   }
-  cout << "AUC for 200-64: " << endl;
-  cout << getAUC(groundTruth, queryResults) << endl;
+  double thisAUC = getAUC(groundTruth, queryResults);
+
+  // Return a pair of the auc and the total number of collisions
+  return make_pair(thisAUC, total / numTrainPoints);
+}
+
+pair<double, double> trainEuclidean(EuclideanHashFunctionTraining *storedHashes,
+                                    size_t filterSize, size_t numDataPoints,
+                                    size_t numTrainPoints, bool *groundTruth) {
+
+  // Keep track of best so far
+  double bestAUC = 0;
+  double bestR = -1;
+  double bestConcatenations = -1;
+  for (size_t numConcatenations = 2; numConcatenations <= MAX_CONCATENATIONS;
+       numConcatenations *= 2) {
+    double startR = 100;
+    storedHashes->setHashParameters(startR, numConcatenations,
+                                    TEST_NUM_FILTERS);
+    pair<double, double> firstResult = runTest(
+        storedHashes, filterSize, numDataPoints, numTrainPoints, groundTruth);
+
+    // Find left and right such that left < half repetitons and right > half
+    // repetitions
+    double leftR, rightR;
+    pair<double, double> leftScore, rightScore;
+    if (firstResult.second > TEST_NUM_FILTERS / 2) {
+      rightR = startR;
+      rightScore = firstResult;
+      leftR = rightR;
+      while (true) {
+        leftR /= 2;
+        storedHashes->setHashParameters(leftR, numConcatenations,
+                                        TEST_NUM_FILTERS);
+        leftScore = runTest(storedHashes, filterSize, numDataPoints,
+                            numTrainPoints, groundTruth);
+        if (leftScore.second < TEST_NUM_FILTERS / 2) {
+          break;
+        }
+      }
+    } else {
+      leftR = startR;
+      leftScore = firstResult;
+      rightR = leftR;
+      while (true) {
+        rightR *= 2;
+        storedHashes->setHashParameters(rightR, numConcatenations,
+                                        TEST_NUM_FILTERS);
+        rightScore = runTest(storedHashes, filterSize, numDataPoints,
+                             numTrainPoints, groundTruth);
+        if (rightScore.second > TEST_NUM_FILTERS / 2) {
+          break;
+        }
+      }
+    }
+
+    // Do the binary search
+    while (
+        abs(leftScore.second - TEST_NUM_FILTERS / 2) > TEST_NUM_FILTERS / 10 ||
+        abs(rightScore.second - TEST_NUM_FILTERS / 2) > TEST_NUM_FILTERS / 10) {
+      double newR = (leftR + rightR) / 2;
+      storedHashes->setHashParameters(newR, numConcatenations,
+                                      TEST_NUM_FILTERS);
+      pair<double, double> newScore = runTest(
+          storedHashes, filterSize, numDataPoints, numTrainPoints, groundTruth);
+      if (newScore.second > TEST_NUM_FILTERS / 2) {
+        rightScore = newScore;
+        rightR = newR;
+      } else {
+        leftScore = newScore;
+        leftR = newR;
+      }
+    }
+
+    // Update AUC
+    double oldBestAUC = bestAUC;
+    if (rightScore.first > bestAUC) {
+      bestAUC = rightScore.first;
+      bestConcatenations = numConcatenations;
+      bestR = rightR;
+    } 
+    if (leftScore.first > bestAUC) {
+      bestAUC = leftScore.first;
+      bestConcatenations = numConcatenations;
+      leftR = rightR;
+    } 
+
+    // If AUC didn't improve enough, break
+    if (oldBestAUC * (1 + IMPROVEMENT_PERCENT_LIMIT / 100.0) > bestAUC) {
+      break;
+    }
+  }
 
   // Return best Euclidean hash function
-  return make_shared<EuclideanHashFunction>(200, 42, numHashesToTrainWith, 64,
-                                            dataDim);
+  return make_pair(bestR, bestConcatenations);
 }
 
 class LSBF_Euclidean {
@@ -117,7 +203,7 @@ public:
 
     // Empty hash function for now
     storedHashes = new EuclideanHashFunctionTraining(
-        key + 1, numFilterReps * MAX_CONCATENATIONS, dataDim,
+        key + 1, TEST_NUM_FILTERS * MAX_CONCATENATIONS, dataDim,
         numDataPoints + numTrainPoints);
   }
 
@@ -129,8 +215,6 @@ public:
       py::array_t<double, py::array::c_style | py::array::forcecast> data,
       py::array_t<double, py::array::c_style | py::array::forcecast> training,
       py::array_t<bool, py::array::c_style | py::array::forcecast> ground) {
-
-    cout << "Setting up and training" << endl;
 
     checkState(0);
 
@@ -154,39 +238,24 @@ public:
 
     // Add data to stored hash
     double *dataPtr = (double *)dataBuf.ptr;
-    // #pragma omp parallel for
-    //     for (size_t i = 0; i < numDataPoints; i++) {
-    //       storedHashes->storeVal(i, dataPtr + i * dataDim);
-    //     }
+#pragma omp parallel for
+    for (size_t i = 0; i < numDataPoints; i++) {
+      storedHashes->storeVal(i, dataPtr + i * dataDim);
+    }
     double *trainPtr = (double *)trainingBuf.ptr;
 
-    // #pragma omp parallel for
-    //     for (size_t i = 0; i < numTrainPoints; i++) {
-    //       storedHashes->storeVal(i + numDataPoints, trainPtr + i * dataDim);
-    //     }
+#pragma omp parallel for
+    for (size_t i = 0; i < numTrainPoints; i++) {
+      storedHashes->storeVal(i + numDataPoints, trainPtr + i * dataDim);
+    }
 
-    //     EuclideanHashFunction *trainedHash =
-    //         trainEuclidean(storedHashes, numFilterReps, oneFilterSize,
-    //                        numDataPoints, numTrainPoints, (bool
-    //                        *)groundBuf.ptr, dataDim)
-    //             .get();
+    pair<double, double> bestParams =
+        trainEuclidean(storedHashes, oneFilterSize, numDataPoints,
+                       numTrainPoints, (bool *)groundBuf.ptr);
 
     EuclideanHashFunction *trainedHash =
-        new EuclideanHashFunction(200, 42, numFilterReps, 8, dataDim);
+        new EuclideanHashFunction(bestParams.first, 42, numFilterReps, bestParams.second, dataDim);
     filter = new BloomFilter<double *>(trainedHash, oneFilterSize);
-
-    // Get AUC
-    vector<double *> toAdd;
-    for (size_t i = 0; i < numDataPoints; i++) {
-      toAdd.push_back(dataPtr + i * dataDim);
-    }
-    filter->addPoints(toAdd);
-    vector<size_t> queryResults;
-    for (size_t i = 0; i < numTrainPoints; i++) {
-      queryResults.push_back(filter->numCollisions(trainPtr + i * dataDim));
-    }
-    cout << "Second AUC for 200-32: " << endl;
-    cout << getAUC((bool *)groundBuf.ptr, queryResults) << endl;
     state = 1;
   }
 

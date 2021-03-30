@@ -41,9 +41,8 @@ public:
     // Generate result
     std::vector<uint64_t> result;
     for (size_t i = 0; i < numHashes; i++) {
-      uint64_t hash = getMurmurHash64(
-          transformedData + i * concatenationNum,
-          concatenationNum * sizeof(int), i);
+      uint64_t hash = getMurmurHash64(transformedData + i * concatenationNum,
+                                      concatenationNum * sizeof(int), i);
       result.push_back(hash);
     }
     return result;
