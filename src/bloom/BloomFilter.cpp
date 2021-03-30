@@ -22,6 +22,21 @@ template <typename T> void BloomFilter<T>::addPoint(T point) {
   }
 }
 
+template <typename T> void BloomFilter<T>::addPoints(vector<T> points) {
+  vector<vector<uint64_t>> stored = vector<vector<uint64_t>>(points.size());
+#pragma omp parallel for
+  for (size_t i = 0; i < points.size(); i++) {
+    stored.at(i) = hashes->getVal(points.at(i));
+  }
+
+#pragma omp parallel for
+  for (size_t i = 0; i < numHashes; i++) {
+    for (size_t point = 0; point < points.size(); point++) {
+      setBit(i, stored.at(point).at(i));
+    }
+  }
+}
+
 template <typename T> size_t BloomFilter<T>::numCollisions(T point) {
   vector<uint64_t> hashList = hashes->getVal(point);
   size_t count = 0;

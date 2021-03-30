@@ -17,6 +17,9 @@ public:
   // Add a point to the bloom filter
   void addPoint(T point);
 
+  // Batch add points to the bloom filter
+  void addPoints(std::vector<T> point);
+
   // Get number of collisions for a test point
   size_t numCollisions(T point);
 

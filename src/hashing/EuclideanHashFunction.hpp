@@ -13,18 +13,18 @@ class EuclideanHashFunction : public HashFunction<double *> {
 public:
   EuclideanHashFunction(double r, uint32_t key, size_t numHashes,
                         size_t concatenationNum, size_t vectorSize)
-      : segments(r), concatenationNum(concatenationNum), numHashes(numHashes) {
+      : segments(r), concatenationNum(concatenationNum), numHashes(numHashes),
+        normalDistribution(0, 1) {
 
     // Generated N(0, 1) Gaussian random vectors
     // https://www.cplusplus.com/reference/random/normal_distribution/
     std::default_random_engine generator;
     generator.seed(key);
-    std::normal_distribution<double> norm_d(0, 1);
     std::uniform_real_distribution<double> unif_d(0.0, segments);
     for (size_t i = 0; i < numHashes * concatenationNum; i++) {
       std::vector<double> nextVector;
       for (size_t d = 0; d < vectorSize; d++) {
-        nextVector.push_back(norm_d(generator));
+        nextVector.push_back(normalDistribution(generator));
       }
       randomVectors.push_back(nextVector);
       randomOffsets.push_back(unif_d(generator));
@@ -33,16 +33,16 @@ public:
 
   // TODO: Combine with EuclideanHashFunctionTraining code
   std::vector<uint64_t> getVal(double *item) {
-    std::vector<int> transformedData;
+    int transformedData[concatenationNum * numHashes];
     for (size_t i = 0; i < concatenationNum * numHashes; i++) {
-      transformedData.push_back(dot(item, i));
+      transformedData[i] = dot(item, i);
     }
 
     // Generate result
     std::vector<uint64_t> result;
     for (size_t i = 0; i < numHashes; i++) {
       uint64_t hash = getMurmurHash64(
-          (char *)(transformedData.data() + i * concatenationNum),
+          transformedData + i * concatenationNum,
           concatenationNum * sizeof(int), i);
       result.push_back(hash);
     }
@@ -57,12 +57,13 @@ private:
   size_t numHashes;
   std::vector<std::vector<double>> randomVectors;
   std::vector<double> randomOffsets;
+  std::normal_distribution<double> normalDistribution;
 
   int dot(double *item, size_t index) {
     std::vector<double> currentVector = randomVectors.at(index);
     double total = 0;
     for (size_t i = 0; i < currentVector.size(); i++) {
-      total += item[i] * currentVector.at(i);
+      total += item[i] * currentVector[i];
     }
     return (total + randomOffsets[index]) / segments;
   }

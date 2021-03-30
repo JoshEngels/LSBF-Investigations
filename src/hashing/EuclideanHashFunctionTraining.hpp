@@ -14,16 +14,15 @@ public:
   EuclideanHashFunctionTraining(uint32_t key, size_t maxHashes,
                                 size_t vectorSize, size_t numVectors)
       : randomVectors(0), rawHashes(numVectors), maxHashes(maxHashes),
-        numDataVectors(numVectors) {
+        numDataVectors(numVectors), normalDistribution(0, 1) {
 
     // Generated N(0, 1) Gaussian random vectors
     // https://www.cplusplus.com/reference/random/normal_distribution/
     generator.seed(key);
-    std::normal_distribution<double> norm_d(0, 1);
     for (size_t i = 0; i < maxHashes; i++) {
       std::vector<double> nextVector;
       for (size_t d = 0; d < vectorSize; d++) {
-        nextVector.push_back(norm_d(generator));
+        nextVector.push_back(normalDistribution(generator));
       }
       randomVectors.push_back(nextVector);
     }
@@ -84,6 +83,7 @@ private:
   size_t concatenationNum, numHashes;
   double r;
   std::vector<double> offsets;
+  std::normal_distribution<double> normalDistribution;
 
   double dot(double *item, size_t index) {
     std::vector<double> currentVector = randomVectors.at(index);

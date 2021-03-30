@@ -44,11 +44,8 @@ double getAUC(bool *groundTruth, vector<size_t> thresholdResults) {
       currentThreshold = results.at(i).first;
       tprs.push_back((double)countTruePositive / (double)countTotalPositive);
       fprs.push_back((double)countFalsePositive / (double)countTotalNegative);
-      cout << currentThreshold + 1 << " "
-           << (double)countTruePositive / (double)countTotalPositive << " "
-           << (double)countFalsePositive / (double)countTotalNegative << endl;
     }
-    if (groundTruth[i]) {
+    if (results.at(i).second) {
       countTruePositive++;
     } else {
       countFalsePositive++;
@@ -79,15 +76,8 @@ trainEuclidean(EuclideanHashFunctionTraining *storedHashes,
                size_t dataDim) {
 
   cout << "Training Euclidean" << endl;
-  // double bestAUC = 0;
-  // size_t bestConcatenationNum = -1;
-  // double bestR = -1;
 
-  // for (size_t i = MIN_CONCATENATIONS; i < MAX_CONCATENATIONS; i++) {
-
-  //   // Find a place where AUC(currentR) < AUC(lastR), max is between
-  //   lastlastR and currentR double lastR = MIN_R; double currentR = 2 * MIN_R;
-  // }
+  // TODO: Training
 
   storedHashes->setHashParameters(300, 32, numHashesToTrainWith);
   BloomFilter<size_t> testFilter =
@@ -109,7 +99,7 @@ trainEuclidean(EuclideanHashFunctionTraining *storedHashes,
   cout << getAUC(groundTruth, queryResults) << endl;
 
   // Return best Euclidean hash function
-  return make_shared<EuclideanHashFunction>(200, 42, numHashesToTrainWith, 3,
+  return make_shared<EuclideanHashFunction>(200, 42, numHashesToTrainWith, 64,
                                             dataDim);
 }
 
@@ -150,8 +140,6 @@ public:
     auto groundBuf = ground.request();
 
     if (dataBuf.ndim != 2 || trainingBuf.ndim != 2 || groundBuf.ndim != 1) {
-      // cout << dataBuf.ndim  << " " << trainingBuf.ndim << " " <<
-      // groundBuf.ndim << endl;
       throw runtime_error(
           "Data and training must be 2 dimensional Numpy arrays, ground truth "
           "must be a 1 dimensional Numpy array.");
@@ -166,23 +154,39 @@ public:
 
     // Add data to stored hash
     double *dataPtr = (double *)dataBuf.ptr;
-#pragma omp parallel for
-    for (size_t i = 0; i < numDataPoints; i++) {
-      storedHashes->storeVal(i, dataPtr + i * dataDim);
-    }
+    // #pragma omp parallel for
+    //     for (size_t i = 0; i < numDataPoints; i++) {
+    //       storedHashes->storeVal(i, dataPtr + i * dataDim);
+    //     }
     double *trainPtr = (double *)trainingBuf.ptr;
 
-#pragma omp parallel for
-    for (size_t i = 0; i < numTrainPoints; i++) {
-      storedHashes->storeVal(i + numDataPoints, trainPtr + i * dataDim);
-    }
+    // #pragma omp parallel for
+    //     for (size_t i = 0; i < numTrainPoints; i++) {
+    //       storedHashes->storeVal(i + numDataPoints, trainPtr + i * dataDim);
+    //     }
+
+    //     EuclideanHashFunction *trainedHash =
+    //         trainEuclidean(storedHashes, numFilterReps, oneFilterSize,
+    //                        numDataPoints, numTrainPoints, (bool
+    //                        *)groundBuf.ptr, dataDim)
+    //             .get();
 
     EuclideanHashFunction *trainedHash =
-        trainEuclidean(storedHashes, numFilterReps, oneFilterSize,
-                       numDataPoints, numTrainPoints, (bool *)groundBuf.ptr,
-                       dataDim)
-            .get();
+        new EuclideanHashFunction(200, 42, numFilterReps, 8, dataDim);
     filter = new BloomFilter<double *>(trainedHash, oneFilterSize);
+
+    // Get AUC
+    vector<double *> toAdd;
+    for (size_t i = 0; i < numDataPoints; i++) {
+      toAdd.push_back(dataPtr + i * dataDim);
+    }
+    filter->addPoints(toAdd);
+    vector<size_t> queryResults;
+    for (size_t i = 0; i < numTrainPoints; i++) {
+      queryResults.push_back(filter->numCollisions(trainPtr + i * dataDim));
+    }
+    cout << "Second AUC for 200-32: " << endl;
+    cout << getAUC((bool *)groundBuf.ptr, queryResults) << endl;
     state = 1;
   }
 
@@ -193,7 +197,7 @@ public:
     if ((size_t)queryBuf.ndim != 1 || (size_t)queryBuf.shape[0] != dataDim) {
       throw runtime_error("Incorrect query shape.");
     }
-    return 0;
+    return filter->numCollisions((double *)queryBuf.ptr);
   }
   // py::array_t<size_t> getNumCollisionsBatch(py::array_t<double> queries) {}
 

@@ -39,7 +39,7 @@ protected:
 
   // Get a 64 bit murmur hash (optimized for 64 bit cpu) for a given pointer and
   // key
-  uint64_t getMurmurHash64(const char *pointer, size_t length, int key) {
+  uint64_t getMurmurHash64(const void *pointer, size_t length, int key) {
     uint64_t hashes[2];
     MurmurHash3_x64_128(pointer, length, key, &hashes[0]);
     return bijectiveMap(hashes[0], hashes[1]);
