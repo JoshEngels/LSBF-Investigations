@@ -60,7 +60,7 @@ public:
     std::vector<double> rawData = rawHashes.at(index);
     int transformedData[concatenationNum * numHashes];
     for (size_t i = 0; i < concatenationNum * numHashes; i++) {
-      transformedData[i] = (rawData[i] + offsets[i]) / r;
+      transformedData[i] = floor((rawData[i] + offsets[i]) / r);
     }
 
     // Generate result

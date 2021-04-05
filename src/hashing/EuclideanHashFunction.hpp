@@ -25,7 +25,9 @@ public:
       std::vector<double> nextVector;
       for (size_t d = 0; d < vectorSize; d++) {
         nextVector.push_back(normalDistribution(generator));
+        // std::cout << nextVector[d] << " ";
       }
+      // std::cout << std::endl;
       randomVectors.push_back(nextVector);
       randomOffsets.push_back(unif_d(generator));
     }
@@ -36,7 +38,9 @@ public:
     int transformedData[concatenationNum * numHashes];
     for (size_t i = 0; i < concatenationNum * numHashes; i++) {
       transformedData[i] = dot(item, i);
+      // std::cout << transformedData[i] << " ";
     }
+    // std::cout << std::endl;
 
     // Generate result
     std::vector<uint64_t> result;
@@ -64,7 +68,8 @@ private:
     for (size_t i = 0; i < currentVector.size(); i++) {
       total += item[i] * currentVector[i];
     }
-    return (total + randomOffsets[index]) / segments;
+    // std::cout << (total + randomOffsets[index]) / segments << " ";
+    return floor((total + randomOffsets[index]) / segments);
   }
 };
 
