@@ -16,8 +16,9 @@ namespace py = pybind11;
 #define TEST_NUM_FILTERS 20
 #define IMPROVEMENT_PERCENT_LIMIT 1
 #define MAX_CONCATENATIONS 32
+#define MIN_CONCATENATIONS 8
 
-double getAUC(bool *groundTruth, vector<size_t> thresholdResults) {
+double getAUCLocal(bool *groundTruth, vector<size_t> thresholdResults) {
   size_t countTotalPositive = 0;
   size_t countTotalNegative = 0;
   for (size_t i = 0; i < thresholdResults.size(); i++) {
@@ -92,7 +93,7 @@ pair<double, double> runTest(EuclideanHashFunctionTraining *storedHashes,
     total += numCol;
     queryResults.push_back(numCol);
   }
-  double thisAUC = getAUC(groundTruth, queryResults);
+  double thisAUC = getAUCLocal(groundTruth, queryResults);
 
   // Return a pair of the auc and the total number of collisions
   return make_pair(thisAUC, total / numTrainPoints);
@@ -106,7 +107,7 @@ pair<double, double> trainEuclidean(EuclideanHashFunctionTraining *storedHashes,
   double bestAUC = 0;
   double bestR = -1;
   double bestConcatenations = -1;
-  for (size_t numConcatenations = 2; numConcatenations <= MAX_CONCATENATIONS;
+  for (size_t numConcatenations = MIN_CONCATENATIONS; numConcatenations <= MAX_CONCATENATIONS;
        numConcatenations *= 2) {
     double startR = 100;
     storedHashes->setHashParameters(startR, numConcatenations,
@@ -172,12 +173,13 @@ pair<double, double> trainEuclidean(EuclideanHashFunctionTraining *storedHashes,
       bestAUC = rightScore.first;
       bestConcatenations = numConcatenations;
       bestR = rightR;
-    } 
+    }
     if (leftScore.first > bestAUC) {
       bestAUC = leftScore.first;
       bestConcatenations = numConcatenations;
       leftR = rightR;
-    } 
+    }
+    cout << bestAUC << " " << bestConcatenations << " " << bestR << endl;
 
     // If AUC didn't improve enough, break
     if (oldBestAUC * (1 + IMPROVEMENT_PERCENT_LIMIT / 100.0) > bestAUC) {
@@ -185,6 +187,10 @@ pair<double, double> trainEuclidean(EuclideanHashFunctionTraining *storedHashes,
     }
   }
 
+  storedHashes->setHashParameters(bestR, bestConcatenations,
+                                  TEST_NUM_FILTERS);
+  cout << bestR << " " << bestConcatenations << endl;
+  cout << runTest(storedHashes, filterSize, numDataPoints, numTrainPoints, groundTruth).first << endl;
   // Return best Euclidean hash function
   return make_pair(bestR, bestConcatenations);
 }
@@ -253,10 +259,43 @@ public:
         trainEuclidean(storedHashes, oneFilterSize, numDataPoints,
                        numTrainPoints, (bool *)groundBuf.ptr);
 
-    EuclideanHashFunction *trainedHash =
-        new EuclideanHashFunction(bestParams.first, 42, numFilterReps, bestParams.second, dataDim);
+    // Create trained bloom filter
+    EuclideanHashFunction *trainedHash = new EuclideanHashFunction(
+        bestParams.first, 42, numFilterReps, bestParams.second, dataDim);
     filter = new BloomFilter<double *>(trainedHash, oneFilterSize);
+    vector<double *> pointers;
+    for (size_t i = 0; i < numDataPoints; i++) {
+      pointers.push_back(dataPtr + i * dataDim);
+    }
+    filter->addPoints(pointers);
+
     state = 1;
+    cout << getAUC(training, ground) << endl;
+  }
+
+  double
+  getAUC(py::array_t<double, py::array::c_style | py::array::forcecast> queries,
+         py::array_t<bool, py::array::c_style | py::array::forcecast> ground) {
+    checkState(1);
+    auto queryBuf = queries.request();
+    auto groundBuf = ground.request();
+    if ((size_t)queryBuf.ndim != 2 || (size_t)queryBuf.shape[1] != dataDim) {
+      throw runtime_error("Incorrect query shape.");
+    }
+    if ((size_t)groundBuf.ndim != 1 ||
+        groundBuf.shape[0] != queryBuf.shape[0]) {
+      throw runtime_error("Incorrect ground shape.");
+    }
+    vector<size_t> thresholdResults(queryBuf.shape[0]);
+    double *queryData = (double *)queryBuf.ptr;
+    bool *groundData = (bool *)groundBuf.ptr;
+
+// #pragma omp parallel for
+    for (int i = 0; i < queryBuf.shape[0]; i++) {
+      thresholdResults.at(i) = filter->numCollisions(queryData + i * dataDim);
+    }
+
+    return getAUCLocal(groundData, thresholdResults);
   }
 
   size_t getNumCollisions(
@@ -268,7 +307,6 @@ public:
     }
     return filter->numCollisions((double *)queryBuf.ptr);
   }
-  // py::array_t<size_t> getNumCollisionsBatch(py::array_t<double> queries) {}
 
 private:
   double cutoff;
@@ -296,6 +334,6 @@ PYBIND11_MODULE(lsbf, m) {
   py::class_<LSBF_Euclidean>(m, "LSBF_Euclidean")
       .def(py::init<double, size_t, size_t, size_t, size_t, size_t, uint32_t>())
       .def("setupAndTrain", &LSBF_Euclidean::setupAndTrain)
-      .def("getNumCollisions", &LSBF_Euclidean::getNumCollisions);
-  // .def("getNumCollisionsBatch", &LSBF_Euclidean::getNumCollisionsBatch);
+      .def("getNumCollisions", &LSBF_Euclidean::getNumCollisions)
+      .def("getAUC", &LSBF_Euclidean::getAUC);
 }
