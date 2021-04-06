@@ -92,15 +92,16 @@ public:
 
     // checkState(0);
 
-    // // http://people.duke.edu/~ccc14/cspy/18G_C++_Python_pybind11.html#More-on-working-with-numpy-arrays
+    // //
+    // http://people.duke.edu/~ccc14/cspy/18G_C++_Python_pybind11.html#More-on-working-with-numpy-arrays
     // auto dataBuf = data.request();
     // auto trainingBuf = training.request();
     // auto groundBuf = ground.request();
 
     // if (dataBuf.ndim != 2 || trainingBuf.ndim != 2 || groundBuf.ndim != 1) {
     //   throw runtime_error(
-    //       "Data and training must be 2 dimensional Numpy arrays, ground truth "
-    //       "must be a 1 dimensional Numpy array.");
+    //       "Data and training must be 2 dimensional Numpy arrays, ground truth
+    //       " "must be a 1 dimensional Numpy array.");
     // }
     // if ((size_t)dataBuf.shape[0] != numDataPoints ||
     //     (size_t)trainingBuf.shape[0] != numTrainPoints ||
@@ -126,8 +127,10 @@ public:
     // state = 1;
   }
 
-  void setup(py::array_t<double, py::array::c_style | py::array::forcecast> data, double r, double concatenationNum) {
-    
+  void
+  setup(py::array_t<double, py::array::c_style | py::array::forcecast> data,
+        double r, double concatenationNum) {
+
     // Check conditions
     checkState(0);
     auto dataBuf = data.request();
@@ -136,7 +139,7 @@ public:
           "Data must be a 2 dimensional Numpy array and each entry must be "
           "of the dimension passed into the constructor.");
     }
-    
+
     // Create filter
     EuclideanHashFunction *trainedHash = new EuclideanHashFunction(
         r, 42, numFilterReps, concatenationNum, dataDim);
@@ -173,7 +176,8 @@ public:
       thresholdResults.at(i) = filter->numCollisions(queryData + i * dataDim);
       totalCollisions += thresholdResults.at(i);
     }
-    // cout << "Average collisions: " << totalCollisions / (double) queryBuf.shape[0] << endl;
+    // cout << "Average collisions: " << totalCollisions / (double)
+    // queryBuf.shape[0] << endl;
 
     return getAUCLocal(groundData, thresholdResults);
   }
