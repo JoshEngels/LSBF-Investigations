@@ -5,7 +5,7 @@
 
 using namespace std;
 
-// TODO: Test with exact collision probabilities and variances?
+// TODO: Test with exact collision probabilities
 SCENARIO("Euclidean hash works as expected") {
 
   srand(42);
@@ -22,9 +22,9 @@ SCENARIO("Euclidean hash works as expected") {
     }
 
     WHEN("We hash pairs of similar and dissimilar vectors") {
-      size_t numHashes = 100;
+      size_t numHashes = 10000;
       HashFunction<double *> *hashFunctions =
-          new EuclideanHashFunction(10, 7, numHashes, 10, 3);
+          new EuclideanHashFunction(5, 7, numHashes, 4, 3);
 
       double simVector1[3] = {1, 1, 2};
       double simVector2[3] = {2, 2, 1};
@@ -48,6 +48,7 @@ SCENARIO("Euclidean hash works as expected") {
           difCount2 += hashes1.at(index) == hashes3.at(index);
         }
 
+        cout << simCount << " " << difCount1 << " " << difCount2 << endl;
         REQUIRE(simCount > difCount1);
         REQUIRE(simCount > difCount2);
         REQUIRE(difCount1 > difCount2);
