@@ -3,6 +3,7 @@ build/*
 output/*
 *.png
 *.out
+*.pyc
 
 # Sift
 data/sift/data 
