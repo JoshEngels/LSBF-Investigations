@@ -2,9 +2,9 @@
 # python train_siamese_network.py
 
 # import the necessary packages
-from pyimagesearch.siamese_network import build_siamese_model
-from pyimagesearch import config
-from pyimagesearch import utils
+from model_details.siamese_network import build_siamese_model
+from model_details import config
+from model_details import utils
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Input

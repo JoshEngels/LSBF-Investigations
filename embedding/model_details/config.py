@@ -20,4 +20,4 @@ MODEL_PATH = os.path.sep.join([BASE_OUTPUT, "siamese_model"])
 PLOT_PATH = os.path.sep.join([BASE_OUTPUT, "plot.png"])
 
 DATA_PATH = "/scratch0/jae4/LSBF-Investigations/data/sift/sift-128-euclidean.hdf5"
-STORED_PAIRS_PATH = "/scratch0/jae4/LSBF-Investigations/embedding/keras-siamese-networks/pairs"
+STORED_PAIRS_PATH = "/scratch0/jae4/LSBF-Investigations/embedding/sift-pairs/pairs"
