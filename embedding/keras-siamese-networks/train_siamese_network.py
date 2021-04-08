@@ -14,10 +14,10 @@ from tensorflow.keras.datasets import mnist
 import h5py
 
 # training parameters
-num_positive_train = 250000
-num_negative_train = 250000
-num_positive_test = 20000
-num_negative_test = 20000
+num_positive_train = 25000
+num_negative_train = 25000
+num_positive_test = 2000
+num_negative_test = 2000
 
 # define problem
 cutoff = 250
@@ -46,16 +46,18 @@ featsA = featureExtractor(imgA)
 featsB = featureExtractor(imgB)
 
 # finally, construct the siamese network
-distance = Lambda(utils.euclidean_distance)([featsA, featsB])
+similarity = Lambda(utils.euclidean_hash_prob)([featsA, featsB])
 # TODO: Change the outputs to be another lambda that does collision probability
-outputs = Dense(1, activation="sigmoid")(distance)
-model = Model(inputs=[imgA, imgB], outputs=outputs)
-print(model.summary())
+# outputs = Dense(1, activation="sigmoid")(distance)
+model = Model(inputs=[imgA, imgB], outputs=similarity)
+# exit()
 
 # compile the model
 print("[INFO] compiling model...")
 model.compile(loss="binary_crossentropy", optimizer="adam",
 	metrics=["accuracy"])
+
+print(model.summary())
 
 # train the model
 print("[INFO] training model...")
@@ -63,7 +65,13 @@ history = model.fit(
 	[pairTrain[:, 0], pairTrain[:, 1]], labelTrain[:],
 	validation_data=([pairTest[:, 0], pairTest[:, 1]], labelTest[:]),
 	batch_size=config.BATCH_SIZE, 
-	epochs=config.EPOCHS)
+	epochs=1)
+
+# print(positive_pairs[0])
+# print(negative_pairs[0])
+# print(model.predict([pairTrain[:2, 0], pairTrain[:2, 1]]))
+# print(model.predict([pairTrain[:2, 0], pairTrain[:2, 1]]).shape)
+exit()
 
 # serialize the model to disk
 print("[INFO] saving siamese model...")
