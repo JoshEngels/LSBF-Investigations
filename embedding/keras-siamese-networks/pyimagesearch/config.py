@@ -2,14 +2,14 @@
 import os
 
 # Set up number of visible gpus
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 # specify the shape of the inputs for our network
 INPUT_SHAPE = (128,)
 
 # specify the batch size and number of epochs
 BATCH_SIZE = 64
-EPOCHS = 100
+EPOCHS = 20
 
 # define the path to the base output directory
 BASE_OUTPUT = "output"

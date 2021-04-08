@@ -54,16 +54,30 @@ def euclidean_distance(vectors):
 	return K.sqrt(K.maximum(sumSquared, K.epsilon()))
 
 def euclidean_hash_prob(vectors):
-  r = 367.5 # This makes the 0.50 cutoff be exactly at the 250, which makes the accuracy be almost 1.0
+	r = 367.5 # This makes the 0.50 cutoff be exactly at the 250, which makes the accuracy be almost 1.0
 
-  dist = euclidean_distance(vectors)
-  
-  cdf = 0.5 + 0.5 * tf.math.erf((-r / dist) / (2 ** 0.5))
-  first_term = 1 - 2 * cdf
+	dist = euclidean_distance(vectors)
+	
+	cdf = 0.5 + 0.5 * tf.math.erf((-r / dist) / (2 ** 0.5))
+	first_term = 1 - 2 * cdf
 
-  second_term = 2 / ((math.pi * 2) ** 0.5) / (r / dist) * (1 - K.exp(- r * r / dist / dist / 2))
+	second_term = 2 / ((math.pi * 2) ** 0.5) / (r / dist) * (1 - K.exp(- r * r / dist / dist / 2))
 
-  return first_term - second_term
+	return first_term - second_term
+
+def collision_prob_contrastive_loss(y, collision_probs, margin=1):
+	# explicitly cast the true class label data type to the predicted
+	# class label data type (otherwise we run the risk of having two
+	# separate data types, causing TensorFlow to error out)
+	y = tf.cast(y, collision_probs.dtype)
+	
+	# calculate the contrastive loss between the true labels and
+	# the predicted labels
+	positive_loss = 1 - collision_probs 
+	negative_lost = K.maximum(margin + collision_probs - 1, 0)
+	loss = K.mean(y * positive_loss + (1 - y) * negative_lost)
+	return loss
+
 
 
 def plot_training(H, plotPath):
