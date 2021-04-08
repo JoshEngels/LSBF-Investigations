@@ -5,7 +5,7 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 # specify the shape of the inputs for our network
-IMG_SHAPE = (28, 28, 1)
+INPUT_SHAPE = (128,)
 
 # specify the batch size and number of epochs
 BATCH_SIZE = 64
@@ -18,3 +18,6 @@ BASE_OUTPUT = "output"
 # model along with training history plot
 MODEL_PATH = os.path.sep.join([BASE_OUTPUT, "siamese_model"])
 PLOT_PATH = os.path.sep.join([BASE_OUTPUT, "plot.png"])
+
+DATA_PATH = "/scratch0/jae4/LSBF-Investigations/data/sift/sift-128-euclidean.hdf5"
+STORED_PAIRS_PATH = "/scratch0/jae4/LSBF-Investigations/embedding/keras-siamese-networks/pairs"

@@ -4,6 +4,7 @@ output/*
 *.png
 *.out
 *.pyc
+embedding/keras-siamese-networks/pairs
 
 # Sift
 data/sift/data 

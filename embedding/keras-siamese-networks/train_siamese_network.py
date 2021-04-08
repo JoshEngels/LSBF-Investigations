@@ -1,5 +1,6 @@
 # USAGE
 # python train_siamese_network.py
+import numpy as np
 
 # import the necessary packages
 from pyimagesearch.siamese_network import build_siamese_model
@@ -10,35 +11,46 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.datasets import mnist
-import numpy as np
+import h5py
 
-# load MNIST dataset and scale the pixel values to the range of [0, 1]
-print("[INFO] loading MNIST dataset...")
-(trainX, trainY), (testX, testY) = mnist.load_data()
-trainX = trainX / 255.0
-testX = testX / 255.0
+# training parameters
+num_positive_train = 250000
+num_negative_train = 250000
+num_positive_test = 20000
+num_negative_test = 20000
 
-# add a channel dimension to the images
-trainX = np.expand_dims(trainX, axis=-1)
-testX = np.expand_dims(testX, axis=-1)
+# define problem
+cutoff = 250
+
+# load SIFT dataset
+print("[INFO] loading SIFT dataset...")
+sift_hf = h5py.File(config.DATA_PATH, "r")
+dataset = sift_hf['train'][:]
 
 # prepare the positive and negative pairs
 print("[INFO] preparing positive and negative pairs...")
-(pairTrain, labelTrain) = utils.make_pairs(trainX, trainY)
-(pairTest, labelTest) = utils.make_pairs(testX, testY)
+positive_pairs, negative_pairs = utils.get_stored_pairs(cutoff)
+print(len(positive_pairs), num_positive_test, num_positive_train)
+assert(len(positive_pairs) > num_positive_test + num_positive_train)
+assert(len(negative_pairs) > num_negative_test + num_negative_train)
+
+(pairTrain, labelTrain) = utils.get_pairs(dataset, positive_pairs[0:num_positive_train], negative_pairs[0:num_negative_train])
+(pairTest, labelTest) = utils.get_pairs(dataset, positive_pairs[num_positive_train:num_positive_train + num_positive_test], negative_pairs[num_negative_train:num_negative_train + num_negative_test])
 
 # configure the siamese network
 print("[INFO] building siamese network...")
-imgA = Input(shape=config.IMG_SHAPE)
-imgB = Input(shape=config.IMG_SHAPE)
-featureExtractor = build_siamese_model(config.IMG_SHAPE)
+imgA = Input(shape=config.INPUT_SHAPE)
+imgB = Input(shape=config.INPUT_SHAPE)
+featureExtractor = build_siamese_model(config.INPUT_SHAPE[0])
 featsA = featureExtractor(imgA)
 featsB = featureExtractor(imgB)
 
 # finally, construct the siamese network
 distance = Lambda(utils.euclidean_distance)([featsA, featsB])
+# TODO: Change the outputs to be another lambda that does collision probability
 outputs = Dense(1, activation="sigmoid")(distance)
 model = Model(inputs=[imgA, imgB], outputs=outputs)
+print(model.summary())
 
 # compile the model
 print("[INFO] compiling model...")
