@@ -6,18 +6,21 @@ all_ground = hf['distances'][:,0]
 data_dim = dataset.shape[1]
 num_data_points = dataset.shape[0]
 
-for i in range(0, 1000000, 10):
+for i in range(0, 1, 1):
+# for i in range(0, 1000000, 10):
   result = np.linalg.norm(dataset - dataset[i], axis=1)
-  sortedResult = np.sort(result)
-  sortedArgs = np.argsort(result)
+  for j in range(len(result)):
+    print(j, result[j])
+  # sortedResult = np.sort(result)
+  # sortedArgs = np.argsort(result)
 
-  jump = 1
-  current = 0
-  nextStop = 100
-  while (current < 1000000):
-    print(i, current, sortedResult[current], sortedArgs[current])
-    if (current == nextStop):
-      nextStop *= 100
-      jump *= 100
-    current += jump
+  # jump = 1
+  # current = 0
+  # nextStop = 100
+  # while (current < 1000000):
+  #   print(i, current, sortedResult[current], sortedArgs[current])
+  #   if (current == nextStop):
+  #     nextStop *= 100
+  #     jump *= 100
+  #   current += jump
   

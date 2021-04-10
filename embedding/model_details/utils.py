@@ -1,10 +1,9 @@
 # import the necessary packages
-import tensorflow.keras.backend as K
 import matplotlib.pyplot as plt
-import numpy as np
-from pyimagesearch import config
+from model_details import config
 import math
 import tensorflow as tf
+import numpy as np
 
 def get_stored_pairs(cutoff):
 	positive_pairs = []
@@ -43,6 +42,8 @@ def get_pairs(dataset, positive_pairs, negative_pairs):
 	return (np.array(data_pairs), np.array(labels))
 
 def euclidean_distance(vectors):
+	import tensorflow.keras.backend as K
+
 	# unpack the vectors into separate lists
 	(featsA, featsB) = vectors
 
@@ -54,6 +55,8 @@ def euclidean_distance(vectors):
 	return K.sqrt(K.maximum(sumSquared, K.epsilon()))
 
 def euclidean_hash_prob(vectors):
+	import tensorflow.keras.backend as K
+
 	r = 367.5 # This makes the 0.50 cutoff be exactly at the 250, which makes the accuracy be almost 1.0
 
 	dist = euclidean_distance(vectors)
@@ -66,6 +69,8 @@ def euclidean_hash_prob(vectors):
 	return first_term - second_term
 
 def collision_prob_contrastive_loss(y, collision_probs, margin=1):
+	import tensorflow.keras.backend as K
+
 	# explicitly cast the true class label data type to the predicted
 	# class label data type (otherwise we run the risk of having two
 	# separate data types, causing TensorFlow to error out)
@@ -74,8 +79,8 @@ def collision_prob_contrastive_loss(y, collision_probs, margin=1):
 	# calculate the contrastive loss between the true labels and
 	# the predicted labels
 	positive_loss = 1 - collision_probs 
-	negative_lost = K.maximum(margin + collision_probs - 1, 0)
-	loss = K.mean(y * positive_loss + (1 - y) * negative_lost)
+	negative_loss = K.maximum(margin + collision_probs - 1, 0)
+	loss = K.mean(y * (positive_loss ** 2) + (1 - y) * (negative_loss ** 2))
 	return loss
 
 

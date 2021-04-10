@@ -8,6 +8,6 @@ def build_siamese_model(num_input_dimensions):
 
   model = Sequential()
   model.add(Input(shape=(num_input_dimensions,)))
-  model.add(Dense(num_input_dimensions * 4, activation="relu"))
+  model.add(Dense(num_input_dimensions, activation="relu"))
   # model.add(Dense(num_input_dimensions, activation="relu"))
   return model

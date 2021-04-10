@@ -58,6 +58,7 @@ double getAUCLocal(bool *groundTruth, vector<size_t> thresholdResults) {
       auc += (fprs.at(i) - lastFPR) * (lastTPR + tprs.at(i)) / 2;
       lastFPR = fprs.at(i);
       lastTPR = tprs.at(i);
+      // cout << lastFPR << " " << lastTPR << endl;
     }
   }
   return auc;

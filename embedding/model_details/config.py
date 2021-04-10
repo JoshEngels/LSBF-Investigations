@@ -16,7 +16,7 @@ BASE_OUTPUT = "output"
 
 # use the base output path to derive the path to the serialized
 # model along with training history plot
-MODEL_PATH = os.path.sep.join([BASE_OUTPUT, "siamese_model"])
+MODEL_PATH = os.path.sep.join([BASE_OUTPUT, "siamese_model_squared_loss"])
 PLOT_PATH = os.path.sep.join([BASE_OUTPUT, "plot.png"])
 
 DATA_PATH = "/scratch0/jae4/LSBF-Investigations/data/sift/sift-128-euclidean.hdf5"
