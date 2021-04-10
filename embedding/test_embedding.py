@@ -50,10 +50,6 @@ train_gt = ground[:num_train_points]
 query_gt = ground[num_train_points:]	
 
 import lsbf
-r = 376.5
-concatenation_num = 12
-one_filter_size = 8000000  # 8 bits per filter per point
-key = 42
 
 dataset_embeddings = new_model.predict(dataset)
 query_embeddings = new_model.predict(query)
@@ -64,13 +60,13 @@ for num_filters in rep_array:
 # for num_filters in rep_array:
 
   data_dim = 128
-  l_filter = lsbf.LSBF_Euclidean(cutoff, data_dim, one_filter_size, num_filters, num_data_points, num_train_points, key)
-  l_filter.setup(dataset_embeddings, r, concatenation_num)
+  l_filter = lsbf.LSBF_Euclidean(cutoff, data_dim, config.ONE_FILTER_SIZE, num_filters, num_data_points, num_train_points, config.KEY)
+  l_filter.setup(dataset_embeddings, config.HASH_R, config.CONCATENATION_NUM)
   embedded_aucs.append(l_filter.getAUC(query_embeddings, query_gt))
 
   data_dim = 128
-  l_filter = lsbf.LSBF_Euclidean(cutoff, data_dim, one_filter_size, num_filters, num_data_points, num_train_points, key)
-  l_filter.setup(dataset, r, concatenation_num)
+  l_filter = lsbf.LSBF_Euclidean(cutoff, data_dim, config.ONE_FILTER_SIZE, num_filters, num_data_points, num_train_points, config.KEY)
+  l_filter.setup(dataset, config.HASH_R, config.CONCATENATION_NUM)
   original_aucs.append(l_filter.getAUC(query, query_gt))
 
 
@@ -90,7 +86,7 @@ plt.plot(range(1, len(rep_array) + 1), original_aucs, linestyle=ls, label=f"Orig
 plt.plot(range(1, len(rep_array) + 1), embedded_aucs, linestyle=ls, label=f"Embedded AUCS")
 plt.legend()
 plt.ylabel("AUC", fontsize=axisfontsize)
-plt.xlabel(f"Log2(# Filter Reps), each filter = 16 bits/poins", fontsize=axisfontsize)
+plt.xlabel(f"Log2(# Filter Reps), each filter = {int(config.ONE_FILTER_SIZE / 1000000)} bits/poins", fontsize=axisfontsize)
 plt.title(f"AUC By Number of Reps, Cutoff = 250", fontsize=titlefontsize)
-plt.savefig(f"Embedding-VS-Original.png", bbox_inches='tight')
+plt.savefig(f"Embedding-VS-Original-{config.CURRENT_MODEL}-{int(config.ONE_FILTER_SIZE / 1000000)}", bbox_inches='tight')
 
