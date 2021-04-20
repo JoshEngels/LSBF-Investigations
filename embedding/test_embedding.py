@@ -53,6 +53,7 @@ import lsbf
 
 dataset_embeddings = new_model.predict(dataset)
 query_embeddings = new_model.predict(query)
+train_embeddings = new_model.predict(train)
 original_aucs = []
 embedded_aucs = []
 rep_array =  [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
@@ -62,12 +63,12 @@ for num_filters in rep_array:
   data_dim = 128
   l_filter = lsbf.LSBF_Euclidean(cutoff, data_dim, config.ONE_FILTER_SIZE, num_filters, num_data_points, num_train_points, config.KEY)
   l_filter.setup(dataset_embeddings, config.HASH_R, config.CONCATENATION_NUM)
-  embedded_aucs.append(l_filter.getAUC(query_embeddings, query_gt))
+  embedded_aucs.append(l_filter.getAUC(train_embeddings, train_gt))
 
   data_dim = 128
   l_filter = lsbf.LSBF_Euclidean(cutoff, data_dim, config.ONE_FILTER_SIZE, num_filters, num_data_points, num_train_points, config.KEY)
-  l_filter.setup(dataset, config.HASH_R, config.CONCATENATION_NUM)
-  original_aucs.append(l_filter.getAUC(query, query_gt))
+  l_filter.setup(dataset, 530, 16)
+  original_aucs.append(l_filter.getAUC(train, train_gt))
 
 
 import matplotlib as plt
@@ -88,5 +89,5 @@ plt.legend()
 plt.ylabel("AUC", fontsize=axisfontsize)
 plt.xlabel(f"Log2(# Filter Reps), each filter = {int(config.ONE_FILTER_SIZE / 1000000)} bits/poins", fontsize=axisfontsize)
 plt.title(f"AUC By Number of Reps, Cutoff = 250", fontsize=titlefontsize)
-plt.savefig(f"Embedding-VS-Original-{config.CURRENT_MODEL}-{int(config.ONE_FILTER_SIZE / 1000000)}", bbox_inches='tight')
+plt.savefig(f"Embedding-VS-Original-{config.CURRENT_MODEL}-{int(config.ONE_FILTER_SIZE / 1000000)}-best", bbox_inches='tight')
 

@@ -10,7 +10,6 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.datasets import mnist
-import h5py
 import random
 
 # NOTE: We get loss of 0.4, validation loss of 0.4 WITHOUT any learning
@@ -19,7 +18,6 @@ import random
 # and 300000 points after 10 epochs (0.25 after two epochs), not bad
 # TODO: Add more "hard" pairs
 # TODO: Think about loss function, how we weight positive and negative examples
-# TODO: Could square or do something else to penalize collision probs
 # TODO: Try different margins
 # TODO: Problem: what if we just get better at hard pairs and worse at easy pairs, how can we make a loss function to fix this?
 
@@ -30,7 +28,7 @@ num_positive_test = 500000
 num_negative_test = 500000
 
 # define problem
-cutoff = 250
+cutoff = 60
 
 # load SIFT dataset
 print("[INFO] Loading SIFT dataset...")

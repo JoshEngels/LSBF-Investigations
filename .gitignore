@@ -8,7 +8,7 @@ embedding/output/*
 embedding/sift-pairs/pairs
 
 # Sift
-data/sift/data 
-data/sift/sift-128-euclidean.hdf5
-data/sift/queries 
-data/sift/query-distances
+*.npy
+*.fvecs
+*.ivecs
+*.gz

@@ -1,6 +1,7 @@
 # import the necessary packages
 import matplotlib.pyplot as plt
-from model_details import config
+# from model_details import config
+import config
 import math
 import tensorflow as tf
 import numpy as np
@@ -57,7 +58,8 @@ def euclidean_distance(vectors):
 def euclidean_hash_prob(vectors):
 	import tensorflow.keras.backend as K
 
-	r = 367.5 # This makes the 0.50 cutoff be exactly at the 250, which makes the accuracy be almost 1.0
+	# r = 367.5 # This makes the 0.50 cutoff be exactly at the 250, which makes the accuracy be almost 1.0
+	r = 1000
 
 	dist = euclidean_distance(vectors)
 	
@@ -98,3 +100,10 @@ def plot_training(H, plotPath):
 	plt.ylabel("Loss/Accuracy")
 	plt.legend(loc="lower left")
 	plt.savefig(plotPath)
+
+def get_sift_groundtruth(dataset):
+	raw = np.fromfile(config.DATA_PATH + "groundtruth.ivecs", dtype=np.uint32)
+	raw = np.reshape(raw, (len(raw) // 101, 101))
+	return np.delete(raw, 0, 1)
+
+print(get_sift_groundtruth())
